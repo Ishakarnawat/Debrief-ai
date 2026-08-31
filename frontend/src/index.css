@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base resets ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  @apply bg-surface-900 text-slate-100;
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(79,110,247,0.15), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(107,140,255,0.08), transparent);
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: #10121a; }
+::-webkit-scrollbar-thumb { background: #252840; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #4f6ef7; }
+
+/* ── Utility classes ─────────────────────────────────────────── */
+@layer components {
+  .card {
+    @apply bg-surface-700 border border-white/[0.06] rounded-2xl p-6
+           shadow-[0_4px_24px_rgba(0,0,0,0.4)];
+  }
+
+  .card-sm {
+    @apply bg-surface-700 border border-white/[0.06] rounded-xl p-4
+           shadow-[0_2px_12px_rgba(0,0,0,0.3)];
+  }
+
+  .btn-primary {
+    @apply bg-brand-500 hover:bg-brand-600 text-white font-display font-semibold
+           px-6 py-3 rounded-xl transition-all duration-200
+           shadow-[0_0_20px_rgba(79,110,247,0.3)] hover:shadow-[0_0_30px_rgba(79,110,247,0.5)]
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply border border-white/10 hover:border-brand-500/50 text-slate-300
+           hover:text-white px-5 py-2.5 rounded-xl transition-all duration-200;
+  }
+
+  .label {
+    @apply text-xs font-display font-semibold uppercase tracking-widest text-slate-500;
+  }
+
+  .score-ring {
+    @apply relative flex items-center justify-center rounded-full;
+  }
+
+  .impact-high   { @apply bg-red-500/15 text-red-400 border border-red-500/30; }
+  .impact-medium { @apply bg-amber-500/15 text-amber-400 border border-amber-500/30; }
+  .impact-low    { @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/30; }
+
+  .star-active   { @apply bg-brand-500/20 text-brand-400 border border-brand-500/40; }
+  .star-inactive { @apply bg-white/5 text-slate-500 border border-white/10; }
+}
+
+/* ── Animations ──────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #161825 25%, #1e2133 50%, #161825 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Clerk modal overrides for dark theme */
+.cl-rootBox,
+.cl-card { background: #161825 !important; }
+.cl-headerTitle,
+.cl-headerSubtitle,
+.cl-socialButtonsBlockButton__text,
+.cl-formFieldLabel,
+.cl-footerActionText { color: #e2e8f0 !important; }
+.cl-formFieldInput { background: #1e2133 !important; color: #e2e8f0 !important; border-color: rgba(255,255,255,0.1) !important; }

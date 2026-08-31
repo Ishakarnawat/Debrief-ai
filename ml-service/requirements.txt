@@ -1,0 +1,8 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+pydantic==2.4.2
+openai==1.3.5
+# Optional — install manually if you want real transcription:
+# openai-whisper==20231117
+# torch  (required by whisper — large install ~2GB)
