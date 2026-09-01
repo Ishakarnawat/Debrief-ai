@@ -21,15 +21,18 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB max
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB max for video
   fileFilter: (req, file, cb) => {
-    const allowed = ["audio/mpeg", "audio/wav", "audio/mp4", "audio/webm", "audio/ogg", "video/mp4"];
-    if (allowed.includes(file.mimetype)) cb(null, true);
-    else cb(new Error("Only audio files are allowed"));
+    const isAudioOrVideo =
+      file.mimetype.startsWith("audio/") ||
+      file.mimetype.startsWith("video/") ||
+      ["audio/mpeg", "audio/wav", "audio/mp4", "audio/webm", "audio/ogg", "video/mp4", "video/webm", "video/quicktime", "video/ogg"].includes(file.mimetype);
+    if (isAudioOrVideo) cb(null, true);
+    else cb(new Error("Only audio or video files are allowed"));
   },
 });
 
-// POST /api/analyze  — protected route
-router.post("/", requireAuth, upload.single("audio"), analyzeInterview);
+// POST /api/analyze — accepts audio, video or media field
+router.post("/", requireAuth, upload.any(), analyzeInterview);
 
 module.exports = router;

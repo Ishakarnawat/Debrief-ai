@@ -1,5 +1,6 @@
 node_modules/
 .env
+.env*.local
 dist/
 __pycache__/
 *.pyc
@@ -7,5 +8,6 @@ venv/
 .venv/
 *.egg-info/
 uploads/
+backend/data/
 *.log
 .DS_Store

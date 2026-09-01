@@ -1,13 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useAuth } from "@clerk/clerk-react";
-import AuthPage   from "./pages/AuthPage";
+import { useAppAuth } from "./context/AuthContext";
+import AuthPage from "./pages/AuthPage";
 import UploadPage from "./pages/UploadPage";
-import Dashboard  from "./pages/Dashboard";
-import Navbar     from "./components/Navbar";
+import Dashboard from "./pages/Dashboard";
+import Navbar from "./components/Navbar";
 
 /* ── Protected route wrapper ─────────────────────────────────── */
 function ProtectedRoute({ children }) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useAppAuth();
   if (!isLoaded) return <PageLoader />;
   if (!isSignedIn) return <Navigate to="/auth" replace />;
   return children;
@@ -37,8 +37,8 @@ export default function App() {
                 <Navbar />
                 <main className="flex-1">
                   <Routes>
-                    <Route path="/"         element={<Navigate to="/upload" replace />} />
-                    <Route path="/upload"   element={<UploadPage />} />
+                    <Route path="/" element={<Navigate to="/upload" replace />} />
+                    <Route path="/upload" element={<UploadPage />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                   </Routes>
                 </main>

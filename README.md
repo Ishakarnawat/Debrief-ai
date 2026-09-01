@@ -1,46 +1,37 @@
-pyth# 🎙️ Debrief.ai — Interview Rejection Analysis System
+# 🎙️ Debrief.ai (Enterprise Edition) — AI-Powered Video Interview & Screening Platform
 
-AI-powered interview coaching platform that analyzes your spoken answers and gives **instant, actionable feedback** on communication, structure, and hiring readiness.
-
----
-
-## 🚨 Problem
-
-Many candidates get rejected from interviews without understanding **why**.
-They lack feedback on:
-
-- Communication clarity
-- Answer structure (STAR method)
-- Confidence & filler words
+Debrief.ai is an advanced, AI-driven asynchronous video interview platform. Designed to bridge the gap between candidates seeking practice and recruiters looking to automate the initial screening process. The system records video interviews, analyzes speech and facial cues, detects potential cheating, and ranks candidates based on their performance.
 
 ---
 
-## 💡 Solution
+## 🚨 The Problem
 
-**Debrief.ai** helps candidates improve by:
-
-- 🎧 Uploading interview audio responses
-- 🧠 Using AI to analyze speech & structure
-- 📊 Providing detailed feedback + hiring probability
+1. **For Recruiters:** Initial screening of hundreds of candidates is incredibly time-consuming and often subject to human bias.
+2. **For Candidates:** They rarely get actionable feedback after rejections, leaving them unaware of shortcomings in communication clarity, structure (STAR method), or body language.
 
 ---
 
-## ✨ Key Features
+## 💡 The Solution
 
-- 🎤 Audio-based interview analysis
-- 🧠 AI-powered feedback (Mock + OpenAI modes)
-- 📊 Hiring probability score
-- 🔍 Filler word detection
-- ⭐ STAR method evaluation
-- 📁 History dashboard (track improvement)
+**Debrief.ai** acts as a fully automated AI HR Assistant:
+- **Recruiters** create custom interview links and send them to candidates.
+- **Candidates** record asynchronous video answers directly in their browser.
+- **AI Engine** processes the video and audio to evaluate:
+  - Technical accuracy and structural logic (STAR method).
+  - Confidence, eye contact, and emotional cues.
+  - Proctoring metrics (tab switching, background voices, multiple faces).
+- **Recruiters** review a ranked dashboard of candidates with detailed AI-generated scorecards.
 
 ---
 
-## 🖼️ Demo Flow
+## ✨ Advanced Features (Final Year Project Highlights)
 
-```
-Upload Audio → AI Analysis → Feedback Dashboard → Improve → Repeat
-```
+- 📹 **Live In-Browser Video Recording:** WebRTC and `MediaRecorder` API integration.
+- 👁️ **Computer Vision Analytics:** Eye-tracking and emotion detection using MediaPipe/OpenCV to analyze body language.
+- 🛡️ **AI Proctoring & Anti-Cheat:** Detects tab-switching, multiple faces, and anomalous background noise.
+- 🧠 **Speech & Content Analysis:** OpenAI + Whisper integration for transcribing audio and evaluating answer quality, detecting filler words, and checking for structured responses.
+- 📊 **Recruiter CRM Dashboard:** Sort, rank, and filter candidates based on automated AI scores (out of 100).
+- 🌓 **Premium UI/UX:** Built with React, Tailwind CSS, Recharts for data visualization, and a dark-mode first design.
 
 ---
 
@@ -48,149 +39,75 @@ Upload Audio → AI Analysis → Feedback Dashboard → Improve → Repeat
 
 ```
 debrief-ai/
-├── backend/          ← Node.js + Express API
-├── ml-service/       ← FastAPI (AI + transcription)
-└── frontend/         ← React + Vite + Tailwind
+├── backend/          ← Node.js + Express API (User Mgmt, Database, S3 Links)
+├── ml-service/       ← FastAPI (Video Processing, Whisper, OpenCV, LLMs)
+└── frontend/         ← React + Vite + Tailwind (Dashboards, Interview Room)
 ```
 
 ---
 
-## ⚡ Quick Start (3 terminals)
+## ⚡ Quick Start (Local Development)
 
 ### 🔧 Prerequisites
-
 - Node.js 18+
 - Python 3.9+
-- MongoDB (local or Atlas)
-- Clerk account
+- MongoDB
+- Clerk Account (Authentication)
+- AWS/Cloudinary (for Video Storage)
+- FFmpeg installed locally
 
----
-
-### 1️⃣ Backend
-
+### 1️⃣ Backend Setup
 ```bash
 cd backend
 npm install
-cp .env.example .env
+cp .env.example .env # Add Clerk & MongoDB keys
 npm run dev
 ```
 
----
-
-### 2️⃣ ML Service
-
+### 2️⃣ ML / AI Service
 ```bash
 cd ml-service
 python -m venv venv
-venv\Scripts\activate   # Windows
+venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
----
-
-### 3️⃣ Frontend
-
+### 3️⃣ Frontend Setup
 ```bash
 cd frontend
 npm install
-cp .env.example .env
+cp .env.example .env # Add Clerk publishable key
 npm run dev
 ```
 
 ---
 
-## 🔐 Authentication Setup
+## 🔄 Advanced System Architecture
 
-Using **Clerk**
-
-- Add `VITE_CLERK_PUBLISHABLE_KEY` in frontend
-- Add `CLERK_SECRET_KEY` in backend
-
----
-
-## 🧠 AI Modes
-
-| Mode    | Description                   |
-| ------- | ----------------------------- |
-| Mock    | Works without API keys (demo) |
-| OpenAI  | Real AI feedback              |
-| Whisper | Real speech-to-text           |
-
----
-
-## 🔄 System Architecture
-
-```
-Frontend → Backend → ML Service → Database → Dashboard
+```text
+[ Browser WebRTC ] ──(Video Stream)──> [ Cloud Storage (AWS S3) ]
+       │                                       │
+  (Tab Events)                                 ▼
+       │                              [ FastAPI ML Service ]
+       ▼                                ├── FFmpeg (Audio extraction)
+[ Node.js Backend ] <──(AI Insights)──  ├── MediaPipe (Vision AI)
+       │                                └── Whisper + LLM (NLP AI)
+       ▼
+[ MongoDB Database ] ──(Scores & Data)──> [ Recruiter Dashboard ]
 ```
 
 ---
 
-## 🌐 API Overview
+## 🏆 Final Year Project / Hackathon Pitch
 
-### Backend
-
-- POST `/api/analyze`
-- GET `/api/history`
-
-### ML Service
-
-- POST `/analyze`
-- GET `/health`
-
----
-
-## 📦 Tech Stack
-
-- Frontend: React, Tailwind
-- Backend: Node.js, Express
-- ML: FastAPI, Whisper
-- Database: MongoDB
-- Auth: Clerk
-
----
-
-## 🎯 Use Case
-
-- Students preparing for placements
-- Mock interview practice
-- Communication improvement
-
----
-
-## 🏆 Hackathon Edge
-
-- ✅ Works without paid APIs (mock mode)
-- ⚡ Fast setup
-- 📊 Real-world impact
-- 🎯 Clear problem-solution fit
-
----
-
-## 🎥 Demo Suggestion
-
-Record answer for:
-
-> “Tell me about a challenge you overcame”
-
-Upload → Show AI feedback → Explain insights
+- **Real-World Utility:** Solves a massive pain point in the B2B SaaS HR space.
+- **Deep Tech Stack:** Combines Full-Stack Web Development (MERN) with cutting-edge Machine Learning (Computer Vision + NLP).
+- **Scalable Architecture:** Microservices design separating the IO-heavy Node backend from the CPU-heavy Python AI service.
 
 ---
 
 ## 👥 Team
-
 - Team Code Crafters
-
----
-
-## 📌 Future Scope
-
-- Video interview analysis
-- Emotion detection
-- Resume + interview alignment
-- Company-specific feedback
-
----
 
 ## ⭐ If you like this project, give it a star!
