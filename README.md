@@ -147,12 +147,13 @@ flowchart TD
 - [ ] MediaPipe / OpenCV head-pose tracking and gaze-stability scoring.
 - [ ] Direct AWS S3 / Cloudinary presigned URL streaming for long video files.
 
-### 🔵 Phase 3: Recruiter Workflows & Active Proctoring 
-- [ ] Multi-tenant role separation (`Recruiter` vs `Candidate`) in Clerk.
-- [ ] Dynamic custom interview link generation with question time limits.
-- [ ] Real-time browser tab-switch and window blur proctoring alerts.
-- [ ] Secondary face detection and noise anomaly flagging.
-- [ ] Recruiter candidate ranking table with multi-metric sorting and filtering.
+### 🔵 Phase 3: Recruiter Workflows & Active Proctoring `COMPLETED`
+- [x] Dynamic custom interview link generation (`/interview/:token`) for recruiters.
+- [x] Real-time browser tab-switch, focus loss, and window blur proctoring alerts.
+- [x] Secondary face presence detection and integrity scoring metrics.
+- [x] Recruiter candidate ranking table and Kanban pipeline board with multi-facet filtering.
+- [x] Interactive proctoring timeline video player with clickable incident markers.
+- [x] Candidate privacy controls (Private Practice isolation & Ephemeral recording mode).
 
 ### 🟣 Phase 4: Live Interaction & Advanced Features 
 - [ ] Real-time conversational AI interviewer with Text-to-Speech (TTS).

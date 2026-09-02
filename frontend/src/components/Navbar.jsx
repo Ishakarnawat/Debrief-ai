@@ -51,7 +51,22 @@ export default function Navbar() {
             }`}
           >
             <LayoutDashboard size={14} />
-            <span>Candidate Records</span>
+            <span>My Assessments</span>
+          </Link>
+
+          <Link
+            to="/recruiter"
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+              pathname === "/recruiter"
+                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+            }`}
+          >
+            <BarChart2 size={14} className={pathname === "/recruiter" ? "text-emerald-400" : ""} />
+            <span>Recruiter Portal</span>
+            <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">
+              Pro
+            </span>
           </Link>
         </nav>
 

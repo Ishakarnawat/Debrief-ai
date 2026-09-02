@@ -16,7 +16,6 @@ export function useAnalyze() {
     setResult(null);
 
     try {
-      // Get fresh JWT or demo token
       const token = (await getToken()) || "demo_token";
 
       const formData = new FormData();
@@ -24,9 +23,17 @@ export function useAnalyze() {
       formData.append("audio", file); // backward compatibility
 
       if (metadata.candidateName) formData.append("candidateName", metadata.candidateName);
+      if (metadata.candidateEmail) formData.append("candidateEmail", metadata.candidateEmail);
       if (metadata.targetRole) formData.append("targetRole", metadata.targetRole);
       if (metadata.question) formData.append("question", metadata.question);
       if (metadata.mediaType) formData.append("mediaType", metadata.mediaType);
+      if (metadata.invitationToken) formData.append("invitationToken", metadata.invitationToken);
+      if (metadata.isPrivate !== undefined) formData.append("isPrivate", metadata.isPrivate);
+      if (metadata.saveVideoFile !== undefined) formData.append("saveVideoFile", metadata.saveVideoFile);
+
+      if (metadata.proctoringData) {
+        formData.append("proctoringData", JSON.stringify(metadata.proctoringData));
+      }
 
       const { data } = await axios.post(`${API_URL}/api/analyze`, formData, {
         headers: {
@@ -74,5 +81,144 @@ export function useHistory() {
     }
   };
 
-  return { fetchHistory, history, loading, error };
+  const deleteAnalysis = async (id) => {
+    try {
+      const token = (await getToken()) || "demo_token";
+      await axios.delete(`${API_URL}/api/history/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-demo-user-id": "demo_user",
+        },
+      });
+      setHistory((prev) => prev.filter((item) => item._id !== id));
+      return true;
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message || "Failed to delete analysis";
+      throw new Error(msg);
+    }
+  };
+
+  return { fetchHistory, deleteAnalysis, history, loading, error };
+}
+
+export function useRecruiter() {
+  const { getToken } = useAppAuth();
+  const [loading, setLoading] = useState(false);
+  const [candidates, setCandidates] = useState([]);
+  const [stats, setStats] = useState({
+    totalCandidates: 0,
+    avgHiringScore: 0,
+    shortlistedCount: 0,
+    flaggedCount: 0,
+  });
+  const [invitations, setInvitations] = useState([]);
+  const [error, setError] = useState(null);
+
+  const fetchCandidates = async (params = {}) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = (await getToken()) || "demo_token";
+      const { data } = await axios.get(`${API_URL}/api/recruiter/candidates`, {
+        params,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-demo-user-id": "demo_user",
+        },
+      });
+      setCandidates(data.data || []);
+      if (data.stats) setStats(data.stats);
+      return data;
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message || "Failed to load candidates";
+      setError(msg);
+      return { data: [], stats: null };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateCandidateStatus = async (id, payload) => {
+    try {
+      const token = (await getToken()) || "demo_token";
+      const { data } = await axios.patch(
+        `${API_URL}/api/recruiter/candidates/${id}/status`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "x-demo-user-id": "demo_user",
+          },
+        }
+      );
+
+      // Update in local state
+      setCandidates((prev) =>
+        prev.map((c) => (c._id === id ? { ...c, ...data.data } : c))
+      );
+      return data.data;
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message;
+      throw new Error(msg);
+    }
+  };
+
+  const createInvitation = async (invitePayload) => {
+    try {
+      const token = (await getToken()) || "demo_token";
+      const { data } = await axios.post(
+        `${API_URL}/api/recruiter/invitations`,
+        invitePayload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "x-demo-user-id": "demo_user",
+          },
+        }
+      );
+      return data;
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message;
+      throw new Error(msg);
+    }
+  };
+
+  const fetchInvitations = async () => {
+    try {
+      const token = (await getToken()) || "demo_token";
+      const { data } = await axios.get(`${API_URL}/api/recruiter/invitations`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-demo-user-id": "demo_user",
+        },
+      });
+      setInvitations(data.data || []);
+      return data.data;
+    } catch (err) {
+      console.error("Failed to load invitations:", err);
+      return [];
+    }
+  };
+
+  const fetchInvitationByToken = async (token) => {
+    try {
+      const { data } = await axios.get(`${API_URL}/api/invitations/${token}`);
+      return data.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Interview link not found or expired.");
+    }
+  };
+
+  return {
+    loading,
+    error,
+    candidates,
+    stats,
+    invitations,
+    fetchCandidates,
+    updateCandidateStatus,
+    createInvitation,
+    fetchInvitations,
+    fetchInvitationByToken,
+  };
 }

@@ -3,6 +3,8 @@ import { useAppAuth } from "./context/AuthContext";
 import AuthPage from "./pages/AuthPage";
 import UploadPage from "./pages/UploadPage";
 import Dashboard from "./pages/Dashboard";
+import RecruiterDashboard from "./pages/RecruiterDashboard";
+import CandidateInvitePage from "./pages/CandidateInvitePage";
 import Navbar from "./components/Navbar";
 
 /* ── Protected route wrapper ─────────────────────────────────── */
@@ -25,10 +27,21 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
+        {/* Public Routes */}
         <Route path="/auth" element={<AuthPage />} />
+        <Route
+          path="/interview/:token"
+          element={
+            <div className="min-h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-1">
+                <CandidateInvitePage />
+              </main>
+            </div>
+          }
+        />
 
-        {/* Protected */}
+        {/* Protected Routes */}
         <Route
           path="/*"
           element={
@@ -40,6 +53,8 @@ export default function App() {
                     <Route path="/" element={<Navigate to="/upload" replace />} />
                     <Route path="/upload" element={<UploadPage />} />
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/recruiter" element={<RecruiterDashboard />} />
+                    <Route path="*" element={<Navigate to="/upload" replace />} />
                   </Routes>
                 </main>
               </div>

@@ -58,17 +58,21 @@ export default function UploadPage() {
   // Mode Selection: "video" | "audio" | "upload"
   const [activeTab, setActiveTab] = useState("video");
 
-  // Screening Metadata
+  // Screening & Privacy Metadata
   const [candidateName, setCandidateName] = useState("Alex Morgan");
+  const [candidateEmail, setCandidateEmail] = useState("alex.morgan@stanford.alumni.edu");
   const [targetRole, setTargetRole] = useState("Full Stack Software Engineer");
   const [selectedQuestion, setSelectedQuestion] = useState(PRESET_QUESTIONS[0]);
   const [customQuestion, setCustomQuestion] = useState("");
   const [isCustomQ, setIsCustomQ] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(true); // Default to strictly private
+  const [saveVideoFile, setSaveVideoFile] = useState(true);
 
   // File state (from video recording, audio recording, or dropzone)
   const [file, setFile] = useState(null);
   const [mediaType, setMediaType] = useState("video");
   const [recordDuration, setRecordDuration] = useState(0);
+  const [proctoringData, setProctoringData] = useState(null);
   const [dragging, setDragging] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
 
@@ -110,10 +114,11 @@ export default function UploadPage() {
   };
 
   // ─── Callback from VideoRecorder Component ─────────────────────────────────
-  const handleVideoRecorded = (videoFile, duration) => {
+  const handleVideoRecorded = (videoFile, duration, pData) => {
     setFile(videoFile);
     setMediaType("video");
     setRecordDuration(duration);
+    if (pData) setProctoringData(pData);
   };
 
   // ─── Audio-only live recording ─────────────────────────────────────────────
@@ -197,9 +202,13 @@ export default function UploadPage() {
     try {
       const metadata = {
         candidateName,
+        candidateEmail,
         targetRole,
         question: currentActiveQuestion,
         mediaType,
+        proctoringData,
+        isPrivate,
+        saveVideoFile,
       };
 
       const result = await analyze(file, metadata);
@@ -242,12 +251,13 @@ export default function UploadPage() {
             <ShieldCheck size={16} className="text-brand-400" />
             <span>Interview Session Context</span>
           </div>
-          <span className="text-xs text-slate-400 bg-surface-700 px-2.5 py-1 rounded-lg border border-white/5">
-            Phase 1 • Video AI Active
+          <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>AI Proctoring Guard Active</span>
           </span>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid sm:grid-cols-3 gap-4">
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
               <User size={13} className="text-slate-400" />
@@ -258,6 +268,20 @@ export default function UploadPage() {
               value={candidateName}
               onChange={(e) => setCandidateName(e.target.value)}
               placeholder="e.g. Jane Doe"
+              className="w-full bg-surface-900 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
+              <User size={13} className="text-slate-400" />
+              <span>Candidate Email</span>
+            </label>
+            <input
+              type="email"
+              value={candidateEmail}
+              onChange={(e) => setCandidateEmail(e.target.value)}
+              placeholder="e.g. candidate@university.edu"
               className="w-full bg-surface-900 border border-white/10 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors"
             />
           </div>
@@ -326,6 +350,81 @@ export default function UploadPage() {
                 className="w-full bg-surface-900 border border-brand-500/50 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors animate-fade-in"
               />
             )}
+          </div>
+        </div>
+
+        {/* Privacy & Recording Security Controls */}
+        <div className="pt-3 border-t border-white/[0.06] space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-white uppercase tracking-wider flex items-center gap-1.5">
+              <span>🔒 Privacy & Recording Security</span>
+            </label>
+            <span className="text-[11px] text-slate-400 font-mono">You control who sees this</span>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setIsPrivate(true)}
+              className={`p-3.5 rounded-xl border text-left transition-all ${
+                isPrivate
+                  ? "bg-brand-500/15 border-brand-500/40 shadow-sm"
+                  : "bg-surface-900 border-white/5 hover:border-white/10 opacity-70"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                  <span>🔒 Practice Session (Private)</span>
+                </span>
+                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-300">
+                  Recommended
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Visible strictly to you under My Assessments. <strong className="text-slate-300">Never</strong> visible to recruiters or on the Recruiter Portal.
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsPrivate(false)}
+              className={`p-3.5 rounded-xl border text-left transition-all ${
+                !isPrivate
+                  ? "bg-emerald-500/15 border-emerald-500/40 shadow-sm"
+                  : "bg-surface-900 border-white/5 hover:border-white/10 opacity-70"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                  <span>🏢 Recruiter Submission</span>
+                </span>
+                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                  Screening
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Submits this interview to the recruiter screening pipeline for official scoring and candidate ranking.
+              </p>
+            </button>
+          </div>
+
+          {/* Ephemeral toggle */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-surface-900 border border-white/5">
+            <div className="text-xs">
+              <span className="text-slate-200 font-medium block">
+                🛡️ Ephemeral Recording Mode
+              </span>
+              <span className="text-[11px] text-slate-400">
+                Immediately erase the video file from the server disk after analysis is complete (keeps transcript & scores only).
+              </span>
+            </div>
+            <input
+              type="checkbox"
+              id="ephemeralMode"
+              checked={!saveVideoFile}
+              onChange={(e) => setSaveVideoFile(!e.target.checked)}
+              className="rounded border-white/10 bg-surface-800 text-brand-500 focus:ring-0 ml-3"
+            />
           </div>
         </div>
       </div>

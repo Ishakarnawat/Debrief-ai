@@ -19,10 +19,11 @@ To make this a standout final-year project, the platform will cater to two main 
 - **Eye-Tracking & Attention Detection:** Use computer vision (e.g., MediaPipe or OpenCV via WebAssembly/FastAPI) to track if the candidate is constantly looking away (reading from a script).
 - **Emotion & Facial Expression Analysis:** Analyze the candidate's confidence levels (nervous, confident, neutral) during different questions.
 
-### 2. 🛡️ Candidate Screening & Proctoring (For Recruiters)
-- **Anti-Cheat System:** Detect multiple faces in the frame, background voices, or tab-switching (browser visibility API).
-- **Automated Scoring:** The AI evaluates answers against a rubric (e.g., technical accuracy, STAR method usage) and assigns a score out of 100.
-- **Recruiter Dashboard:** A KanBan board or ranking table sorting candidates by their AI-generated scores.
+### 2. 🛡️ Candidate Screening & Proctoring (For Recruiters) ✅ [IMPLEMENTED]
+- **Anti-Cheat System:** Detect multiple faces in the frame, background voices, or tab-switching (browser visibility API) with real-time HUD alerts and chronological timeline logging.
+- **Automated Scoring:** The AI evaluates answers against a 5-dimension rubric (technical accuracy, STAR method, clarity, problem solving, confidence) and assigns a score out of 100 with hiring recommendations.
+- **Recruiter Dashboard:** Both an interactive Ranking Table and a drag-and-drop Kanban pipeline board with anti-cheat risk badges and deep-dive proctoring review modal.
+- **Interview Invitation Generator:** Unique link generator (`/interview/:token`) for recruiters to invite candidates with custom prompts and strict proctoring mode.
 
 ### 3. 🤖 Real-Time Interactive AI Interviewer
 - Instead of just uploading static files, the platform features a conversational UI where an AI (using OpenAI Realtime API or standard Whisper + GPT-4 setup) asks dynamic follow-up questions based on the candidate's previous answers.

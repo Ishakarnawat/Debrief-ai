@@ -11,6 +11,9 @@ import {
   Briefcase,
   HelpCircle,
   PlayCircle,
+  Trash2,
+  Lock,
+  Shield,
 } from "lucide-react";
 
 import ScoreCard from "../components/ScoreCard";
@@ -40,7 +43,7 @@ function StatPill({ icon: Icon, label, value }) {
 }
 
 /* ── History row ─────────────────────────────────────────────── */
-function HistoryRow({ item, onSelect }) {
+function HistoryRow({ item, onSelect, onDelete }) {
   const date = new Date(item.createdAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -48,56 +51,84 @@ function HistoryRow({ item, onSelect }) {
     minute: "2-digit",
   });
   const isVideo = item.mediaType === "video";
+  const isPrivate = item.isPrivate !== false;
 
   return (
-    <button
+    <div
       onClick={() => onSelect(item)}
-      className="w-full text-left flex items-center gap-4 p-4 rounded-xl
+      className="w-full text-left flex items-center justify-between gap-4 p-4 rounded-xl
                  hover:bg-white/5 border border-transparent hover:border-white/[0.08]
-                 transition-all duration-200 group bg-surface-800/40"
+                 transition-all duration-200 group bg-surface-800/40 cursor-pointer"
     >
-      <div
-        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-          isVideo ? "bg-red-500/10 text-red-400" : "bg-brand-500/10 text-brand-400"
-        }`}
-      >
-        {isVideo ? <Video size={16} /> : <Mic size={16} />}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-slate-200 text-sm font-semibold truncate">
-            {item.candidateName ? `${item.candidateName} • ${item.targetRole || "Candidate"}` : item.filename || "Interview Assessment"}
-          </p>
-          <span
-            className={`text-[10px] px-2 py-0.5 rounded font-mono uppercase ${
-              isVideo
-                ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                : "bg-brand-500/10 text-brand-400 border border-brand-500/20"
-            }`}
-          >
-            {isVideo ? "VIDEO" : "AUDIO"}
-          </span>
-        </div>
-        <p className="text-slate-400 text-xs truncate mt-0.5">{item.question || item.filename}</p>
-        <p className="text-slate-500 text-[11px] mt-0.5">{date}</p>
-      </div>
-
-      <div className="text-right shrink-0">
+      <div className="flex items-center gap-3.5 min-w-0 flex-1">
         <div
-          className={`text-sm font-display font-bold ${
-            item.hiring_score >= 70
-              ? "text-emerald-400"
-              : item.hiring_score >= 45
-              ? "text-amber-400"
-              : "text-red-400"
+          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+            isVideo ? "bg-red-500/10 text-red-400" : "bg-brand-500/10 text-brand-400"
           }`}
         >
-          {Math.round(item.hiring_score ?? 0)}%
+          {isVideo ? <Video size={16} /> : <Mic size={16} />}
         </div>
-        <div className="text-xs text-slate-500">hire score</div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-slate-200 text-sm font-semibold truncate">
+              {item.candidateName ? `${item.candidateName} • ${item.targetRole || "Candidate"}` : item.filename || "Interview Assessment"}
+            </p>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded font-mono uppercase ${
+                isVideo
+                  ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                  : "bg-brand-500/10 text-brand-400 border border-brand-500/20"
+              }`}
+            >
+              {isVideo ? "VIDEO" : "AUDIO"}
+            </span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded font-mono ${
+                isPrivate
+                  ? "bg-brand-500/10 text-brand-300 border border-brand-500/20"
+                  : "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+              }`}
+            >
+              {isPrivate ? "🔒 Private" : "🏢 Recruiter"}
+            </span>
+          </div>
+          <p className="text-slate-400 text-xs truncate mt-0.5">{item.question || item.filename}</p>
+          <p className="text-slate-500 text-[11px] mt-0.5">{date}</p>
+        </div>
       </div>
-    </button>
+
+      <div className="flex items-center gap-4 shrink-0">
+        <div className="text-right">
+          <div
+            className={`text-sm font-display font-bold ${
+              item.hiring_score >= 70
+                ? "text-emerald-400"
+                : item.hiring_score >= 45
+                ? "text-amber-400"
+                : "text-red-400"
+            }`}
+          >
+            {Math.round(item.hiring_score ?? 0)}%
+          </div>
+          <div className="text-xs text-slate-500">hire score</div>
+        </div>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (window.confirm("Are you sure you want to permanently delete this recording and assessment data?")) {
+              onDelete(item._id);
+            }
+          }}
+          title="Permanently delete recording & assessment"
+          className="p-2 rounded-lg bg-surface-700/60 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -105,7 +136,7 @@ function HistoryRow({ item, onSelect }) {
 export default function Dashboard() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { fetchHistory, history, loading: histLoading } = useHistory();
+  const { fetchHistory, deleteAnalysis, history, loading: histLoading } = useHistory();
 
   // Result can come from navigation state (just analyzed) or history selection
   const [data, setData] = useState(location.state?.result || null);
@@ -113,6 +144,17 @@ export default function Dashboard() {
   useEffect(() => {
     fetchHistory();
   }, []);
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteAnalysis(id);
+      if (data && (data._id === id || data.analysisId === id)) {
+        setData(null);
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   // ── Empty state / History list ──────────────────────────────
   if (!data) {
@@ -158,7 +200,7 @@ export default function Dashboard() {
         ) : (
           <div className="card p-3 space-y-2 bg-surface-900 border border-white/[0.08] rounded-2xl">
             {history.map((item) => (
-              <HistoryRow key={item._id} item={item} onSelect={setData} />
+              <HistoryRow key={item._id} item={item} onSelect={setData} onDelete={handleDelete} />
             ))}
           </div>
         )}
@@ -173,7 +215,7 @@ export default function Dashboard() {
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 animate-fade-in space-y-6">
       {/* Top Navigation & Info Header */}
-      <div className="flex items-start justify-between gap-4 border-b border-white/[0.06] pb-6">
+      <div className="flex items-start justify-between gap-4 border-b border-white/[0.06] pb-6 flex-wrap">
         <div className="flex items-center gap-3.5">
           <button
             onClick={() => setData(null)}
@@ -182,7 +224,7 @@ export default function Dashboard() {
             <ArrowLeft size={16} />
           </button>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-display font-bold text-2xl text-white">
                 {data.candidateName ? `${data.candidateName}` : "Interview Assessment"}
               </h1>
@@ -195,6 +237,15 @@ export default function Dashboard() {
               >
                 {isVideoMedia ? "VIDEO SESSION" : "AUDIO SESSION"}
               </span>
+              <span
+                className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
+                  data.isPrivate !== false
+                    ? "bg-brand-500/10 text-brand-300 border border-brand-500/20"
+                    : "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+                }`}
+              >
+                {data.isPrivate !== false ? "🔒 Private Practice" : "🏢 Recruiter Submission"}
+              </span>
             </div>
             <p className="text-slate-400 text-xs sm:text-sm mt-0.5">
               Target Role: <span className="text-slate-200 font-medium">{data.targetRole || "General"}</span>
@@ -202,12 +253,25 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <button
-          onClick={() => navigate("/upload")}
-          className="btn-ghost text-xs inline-flex items-center gap-1.5 py-2 px-3 border border-white/10"
-        >
-          <Upload size={13} /> New Assessment
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              const idToDelete = data._id || data.analysisId;
+              if (idToDelete && window.confirm("Are you sure you want to permanently delete this recording and all assessment data from the server?")) {
+                handleDelete(idToDelete);
+              }
+            }}
+            className="btn-ghost text-xs inline-flex items-center gap-1.5 py-2 px-3 border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
+          >
+            <Trash2 size={13} /> Delete Recording
+          </button>
+          <button
+            onClick={() => navigate("/upload")}
+            className="btn-ghost text-xs inline-flex items-center gap-1.5 py-2 px-3 border border-white/10"
+          >
+            <Upload size={13} /> New Assessment
+          </button>
+        </div>
       </div>
 
       {/* Question Context Banner */}
@@ -223,16 +287,34 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Video Replay Player (If video exists) */}
-      {mediaFullUrl && isVideoMedia && (
+      {/* Video Replay Player / Privacy Notice */}
+      {isVideoMedia && (
         <div className="card p-4 bg-slate-950 border border-white/10 rounded-2xl space-y-2">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
-            <PlayCircle size={15} className="text-brand-400" />
-            <span>Recorded Candidate Video Playback</span>
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+            <div className="flex items-center gap-2">
+              <PlayCircle size={15} className="text-brand-400" />
+              <span>Recorded Candidate Video Playback</span>
+            </div>
+            <span className="text-[11px] text-slate-400 font-mono">
+              {mediaFullUrl ? "🔒 Protected Stream" : "🛡️ Ephemeral (No Video Saved)"}
+            </span>
           </div>
-          <div className="rounded-xl overflow-hidden aspect-video max-h-[360px] bg-black mx-auto flex items-center justify-center">
-            <video src={mediaFullUrl} controls className="w-full h-full object-contain" />
-          </div>
+
+          {mediaFullUrl ? (
+            <div className="rounded-xl overflow-hidden aspect-video max-h-[360px] bg-black mx-auto flex items-center justify-center">
+              <video src={mediaFullUrl} controls className="w-full h-full object-contain" />
+            </div>
+          ) : (
+            <div className="p-6 rounded-xl bg-surface-900 border border-white/5 text-center space-y-1.5">
+              <p className="text-sm font-medium text-slate-300 flex items-center justify-center gap-1.5">
+                <Shield size={16} className="text-emerald-400" />
+                <span>Ephemeral Privacy Mode Active</span>
+              </p>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                The video recording was evaluated in memory and discarded immediately after analysis. No video file remains stored on the server.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

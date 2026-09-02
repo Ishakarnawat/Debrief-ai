@@ -52,6 +52,9 @@ class AnalysisResponse(BaseModel):
     filler_words: dict
     wpm: float
     confidence_score: float
+    rubric: Optional[dict] = None
+    recommendation: Optional[str] = None
+    recruiter_summary: Optional[str] = None
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -290,6 +293,33 @@ async def analyze(file: UploadFile = File(...)):
 
         # 4. AI evaluation
         ai_result = ai_evaluate(transcript, star, filler_counts, wpm)
+        hiring_score = ai_result["hiring_score"]
+
+        # 5. Screening Rubric
+        scores = ai_result["scores"]
+        star_count = sum(1 for v in star.values() if v)
+        rubric = {
+            "technicalAccuracy": scores.get("depth", 7.0),
+            "starCompliance": round(min(10.0, star_count * 2.5), 1),
+            "communicationClarity": scores.get("clarity", 7.0),
+            "problemSolving": scores.get("relevance", 7.0),
+            "confidenceBodyLanguage": round(min(10.0, confidence / 10.0), 1),
+        }
+
+        if hiring_score >= 85:
+            recommendation = "Strong Hire"
+        elif hiring_score >= 70:
+            recommendation = "Hire"
+        elif hiring_score >= 50:
+            recommendation = "Borderline"
+        else:
+            recommendation = "Do Not Hire"
+
+        recruiter_summary = (
+            f"Candidate achieved an overall hiring score of {hiring_score:.1f}% ({recommendation}). "
+            f"Communication clarity scored {scores.get('clarity', 7.0)}/10 with {sum(filler_counts.values())} filler word(s). "
+            f"STAR framework structure was {star_count}/4 components verified."
+        )
 
         return AnalysisResponse(
             transcript=transcript,
@@ -298,10 +328,13 @@ async def analyze(file: UploadFile = File(...)):
             star=star,
             improved_answer=ai_result["improved_answer"],
             follow_up_question=ai_result["follow_up_question"],
-            hiring_score=ai_result["hiring_score"],
+            hiring_score=hiring_score,
             filler_words=filler_counts,
             wpm=wpm,
             confidence_score=confidence,
+            rubric=rubric,
+            recommendation=recommendation,
+            recruiter_summary=recruiter_summary,
         )
     finally:
         os.unlink(tmp_path)

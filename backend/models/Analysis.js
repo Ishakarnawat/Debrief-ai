@@ -21,6 +21,31 @@ const StarSchema = new mongoose.Schema({
   result: Boolean,
 });
 
+const ProctoringViolationSchema = new mongoose.Schema({
+  timestamp: String,
+  timeInSeconds: Number,
+  type: String,
+  description: String,
+  severity: { type: String, enum: ["low", "medium", "high"], default: "medium" },
+});
+
+const ProctoringSchema = new mongoose.Schema({
+  integrityScore: { type: Number, default: 100 },
+  riskLevel: { type: String, enum: ["low", "medium", "high"], default: "low" },
+  tabSwitches: { type: Number, default: 0 },
+  multipleFacesDetected: { type: Boolean, default: false },
+  eyeContactPercent: { type: Number, default: 90 },
+  violations: [ProctoringViolationSchema],
+});
+
+const RubricSchema = new mongoose.Schema({
+  technicalAccuracy: { type: Number, default: 7 },
+  starCompliance: { type: Number, default: 7 },
+  communicationClarity: { type: Number, default: 7 },
+  problemSolving: { type: Number, default: 7 },
+  confidenceBodyLanguage: { type: Number, default: 8 },
+});
+
 // ─── Main analysis schema ─────────────────────────────────────────────────────
 const AnalysisSchema = new mongoose.Schema(
   {
@@ -37,9 +62,27 @@ const AnalysisSchema = new mongoose.Schema(
     filename: String,
     mediaType: { type: String, enum: ["audio", "video"], default: "audio" },
     mediaUrl: String,
-    candidateName: String,
-    targetRole: String,
+    candidateName: { type: String, default: "Candidate" },
+    candidateEmail: { type: String, default: "candidate@example.com" },
+    targetRole: { type: String, default: "Full Stack Engineer" },
     question: String,
+    status: {
+      type: String,
+      enum: ["Screening", "Shortlisted", "Under Review", "Rejected", "Offer Extended"],
+      default: "Screening",
+    },
+    recruiterNotes: { type: String, default: "" },
+    rubric: RubricSchema,
+    proctoring: ProctoringSchema,
+    recommendation: {
+      type: String,
+      enum: ["Strong Hire", "Hire", "Borderline", "Do Not Hire"],
+      default: "Hire",
+    },
+    recruiterSummary: String,
+    invitationToken: String,
+    isPrivate: { type: Boolean, default: false },
+    saveVideoFile: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
@@ -83,21 +126,50 @@ const generateId = () => {
 
 const LocalAnalysis = {
   async create(doc) {
+    const store = loadLocalData();
     const newDoc = {
       _id: generateId(),
+      status: "Screening",
+      recruiterNotes: "",
+      isPrivate: false,
+      saveVideoFile: true,
+      proctoring: {
+        integrityScore: 100,
+        riskLevel: "low",
+        tabSwitches: 0,
+        multipleFacesDetected: false,
+        eyeContactPercent: 92,
+        violations: [],
+      },
+      rubric: {
+        technicalAccuracy: 7.5,
+        starCompliance: 7.0,
+        communicationClarity: 8.0,
+        problemSolving: 7.5,
+        confidenceBodyLanguage: 8.0,
+      },
+      recommendation: "Hire",
       ...doc,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    localStore.unshift(newDoc);
-    saveLocalData(localStore);
+    store.unshift(newDoc);
+    saveLocalData(store);
     return newDoc;
   },
 
   find(query = {}) {
-    let result = localStore.filter((item) => {
+    const store = loadLocalData();
+    let result = store.filter((item) => {
       for (const [key, val] of Object.entries(query)) {
-        if (item[key] !== val) return false;
+        if (val && typeof val === "object" && "$regex" in val) {
+          const regex = new RegExp(val.$regex, val.$options || "");
+          if (!regex.test(String(item[key] || ""))) return false;
+        } else if (val && typeof val === "object" && "$ne" in val) {
+          if (item[key] === val.$ne) return false;
+        } else if (item[key] !== val && String(item[key]) !== String(val)) {
+          return false;
+        }
       }
       return true;
     });
@@ -105,8 +177,18 @@ const LocalAnalysis = {
     const chain = {
       _data: [...result],
       sort(sortObj) {
-        if (sortObj && sortObj.createdAt === -1) {
-          this._data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        if (sortObj) {
+          if (sortObj.createdAt === -1) {
+            this._data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          } else if (sortObj.hiring_score === -1) {
+            this._data.sort((a, b) => (b.hiring_score || 0) - (a.hiring_score || 0));
+          } else if (sortObj["proctoring.integrityScore"] === -1) {
+            this._data.sort(
+              (a, b) =>
+                (b.proctoring?.integrityScore || 100) -
+                (a.proctoring?.integrityScore || 100)
+            );
+          }
         }
         return this;
       },
@@ -127,7 +209,8 @@ const LocalAnalysis = {
   },
 
   findOne(query = {}) {
-    const found = localStore.find((item) => {
+    const store = loadLocalData();
+    const found = store.find((item) => {
       for (const [key, val] of Object.entries(query)) {
         if (item[key] !== val && String(item[key]) !== String(val)) return false;
       }
@@ -144,6 +227,40 @@ const LocalAnalysis = {
       },
     };
     return chain;
+  },
+
+  findById(id) {
+    return this.findOne({ _id: id });
+  },
+
+  async findByIdAndUpdate(id, update, options = {}) {
+    const store = loadLocalData();
+    const index = store.findIndex(
+      (item) => String(item._id) === String(id)
+    );
+    if (index === -1) return null;
+
+    const current = store[index];
+    let updated;
+    if (update.$set) {
+      updated = { ...current, ...update.$set, updatedAt: new Date().toISOString() };
+    } else {
+      updated = { ...current, ...update, updatedAt: new Date().toISOString() };
+    }
+    store[index] = updated;
+    saveLocalData(store);
+    return updated;
+  },
+
+  async findByIdAndDelete(id) {
+    const store = loadLocalData();
+    const index = store.findIndex(
+      (item) => String(item._id) === String(id)
+    );
+    if (index === -1) return null;
+    const deleted = store.splice(index, 1)[0];
+    saveLocalData(store);
+    return deleted;
   },
 };
 
