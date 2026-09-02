@@ -133,13 +133,13 @@ flowchart TD
   (Audio & Video Base)       (Whisper & Vision)        (Proctoring & Dashboard)       (Live AI & Reports)
 ```
 
-### 🟢 Phase 1: Video Capture & Storage Engine `COMPLETED`
+### 🟢 Phase 1: Video Capture & Storage Engine 
 - [x] Responsive dark-mode interface with Tailwind CSS and dynamic Navbar.
 - [x] In-browser audio & video recording component via `MediaRecorder`.
 - [x] Node.js Express server with Clerk authentication and MongoDB persistence.
 - [x] Initial JSON-based fallback data persistence and mock test suites.
 
-### 🟡 Phase 2: Core Vision & NLP AI Pipeline `IN PROGRESS`
+### 🟡 Phase 2: Core Vision & NLP AI Pipeline 
 - [x] FastAPI microservice integration with CORS & asynchronous request handling.
 - [x] OpenAI Whisper transcription engine with fallback mock pipelines.
 - [x] Filler word frequency analysis and speech velocity (WPM) calculation.
@@ -147,14 +147,14 @@ flowchart TD
 - [ ] MediaPipe / OpenCV head-pose tracking and gaze-stability scoring.
 - [ ] Direct AWS S3 / Cloudinary presigned URL streaming for long video files.
 
-### 🔵 Phase 3: Recruiter Workflows & Active Proctoring `UPCOMING`
+### 🔵 Phase 3: Recruiter Workflows & Active Proctoring 
 - [ ] Multi-tenant role separation (`Recruiter` vs `Candidate`) in Clerk.
 - [ ] Dynamic custom interview link generation with question time limits.
 - [ ] Real-time browser tab-switch and window blur proctoring alerts.
 - [ ] Secondary face detection and noise anomaly flagging.
 - [ ] Recruiter candidate ranking table with multi-metric sorting and filtering.
 
-### 🟣 Phase 4: Live Interaction & Advanced Features `PLANNED`
+### 🟣 Phase 4: Live Interaction & Advanced Features 
 - [ ] Real-time conversational AI interviewer with Text-to-Speech (TTS).
 - [ ] Interactive split-screen coding editor (Monaco) with live syntax evaluation.
 - [ ] One-click downloadable PDF scorecard generation (`react-pdf`).
