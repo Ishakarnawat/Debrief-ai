@@ -20,7 +20,10 @@ import {
   ChevronRight,
   Sparkles,
   Zap,
+  Code2,
 } from "lucide-react";
+import CompetencyRadarChart from "./CompetencyRadarChart";
+import PDFScorecardModal from "./PDFScorecardModal";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -36,6 +39,7 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
   const [notes, setNotes] = useState(candidate.recruiterNotes || "");
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
 
   const proctoring = candidate.proctoring || {
     integrityScore: 100,
@@ -459,7 +463,7 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
                   <div>
                     <h3 className="text-sm font-semibold text-white">Automated Candidate Screening Rubric</h3>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Evaluated against standard competencies (Scale 1–10)
+                      Evaluated across 5 core competencies with industry baseline comparison
                     </p>
                   </div>
                   <div className="text-right">
@@ -470,39 +474,66 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
                   </div>
                 </div>
 
-                {/* Score Dimension Bars */}
-                <div className="space-y-3 pt-2">
-                  {[
-                    { label: "Technical Accuracy & Depth", score: rubric.technicalAccuracy, desc: "Factual correctness, architectural precision and concrete technical details" },
-                    { label: "STAR Framework Compliance", score: rubric.starCompliance, desc: "Situation, Task, Action, and measurable quantifiable Results" },
-                    { label: "Communication & Clarity", score: rubric.communicationClarity, desc: "Vocal cadence, minimal filler words, concise sentence structure" },
-                    { label: "Problem Solving & Logic", score: rubric.problemSolving, desc: "Analytical breakdown of challenges, mitigation strategies" },
-                    { label: "Confidence & Body Language", score: rubric.confidenceBodyLanguage, desc: "Eye-contact retention, steady speaking pace, composure" },
-                  ].map(({ label, score, desc }) => (
-                    <div key={label} className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-200 font-medium">{label}</span>
-                        <span className="text-white font-mono font-bold">{score}/10</span>
+                {/* Split View: Radar Chart on Left, Dimension Bars on Right */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center pt-2">
+                  <div className="md:col-span-6 bg-surface-900/60 border border-white/5 rounded-xl p-3 flex flex-col items-center justify-center">
+                    <CompetencyRadarChart rubric={rubric} size="small" />
+                  </div>
+
+                  <div className="md:col-span-6 space-y-3">
+                    {[
+                      { label: "Technical Accuracy & Depth", score: rubric.technicalAccuracy, desc: "Factual correctness, architectural precision" },
+                      { label: "STAR Framework Compliance", score: rubric.starCompliance, desc: "Situation, Task, Action, and quantifiable Results" },
+                      { label: "Communication & Clarity", score: rubric.communicationClarity, desc: "Vocal cadence, minimal fillers, concise structure" },
+                      { label: "Problem Solving & Logic", score: rubric.problemSolving, desc: "Analytical breakdown, mitigation strategies" },
+                      { label: "Confidence & Body Language", score: rubric.confidenceBodyLanguage, desc: "Composure, eye-contact retention" },
+                    ].map(({ label, score, desc }) => (
+                      <div key={label} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-200 font-medium">{label}</span>
+                          <span className="text-brand-400 font-mono font-bold">{score} / 10</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-surface-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-brand-500 to-indigo-400 rounded-full transition-all duration-500"
+                            style={{ width: `${score * 10}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-slate-500">{desc}</p>
                       </div>
-                      <div className="h-2 w-full bg-surface-700 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            score >= 8.5
-                              ? "bg-emerald-400"
-                              : score >= 7.0
-                              ? "bg-brand-500"
-                              : score >= 5.0
-                              ? "bg-amber-400"
-                              : "bg-red-400"
-                          }`}
-                          style={{ width: `${score * 10}%` }}
-                        />
-                      </div>
-                      <p className="text-[11px] text-slate-500">{desc}</p>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
+
+              {/* Live Coding Challenge Evaluation (if candidate performed coding) */}
+              {candidate.codeEvaluation && (
+                <div className="card p-4 bg-surface-800/80 border border-white/10 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-brand-400 font-semibold text-xs">
+                      <Code2 size={15} />
+                      <span>Live Algorithmic Coding Challenge Evaluation</span>
+                    </div>
+                    <span
+                      className={`text-[11px] px-2.5 py-0.5 rounded font-mono font-semibold ${
+                        candidate.codeEvaluation.status === "PASSED"
+                          ? "bg-emerald-500/20 text-emerald-300"
+                          : "bg-amber-500/20 text-amber-300"
+                      }`}
+                    >
+                      {candidate.codeEvaluation.status} ({candidate.codeEvaluation.passedCount}/{candidate.codeEvaluation.totalCount} Test Suites)
+                    </span>
+                  </div>
+
+                  <div className="p-3 bg-surface-950 rounded-lg border border-white/5 text-xs space-y-2 font-mono">
+                    <div className="flex items-center justify-between text-slate-400 text-[11px]">
+                      <span>Problem: <strong className="text-white">{candidate.codeEvaluation.problemTitle}</strong></span>
+                      <span>Complexity: <strong className="text-brand-300">{candidate.codeEvaluation.complexity}</strong></span>
+                    </div>
+                    <p className="text-slate-300 text-[11px] leading-relaxed font-sans">{candidate.codeEvaluation.feedback}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -588,14 +619,14 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
               />
             </div>
 
-            <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => window.print()}
-                className="btn-ghost text-xs inline-flex items-center gap-1.5 py-2 px-3 border border-white/10"
+                onClick={() => setShowPdfModal(true)}
+                className="btn-ghost text-xs inline-flex items-center gap-1.5 py-2 px-3 border border-brand-500/30 text-brand-300 hover:bg-brand-500/10 transition-colors"
               >
-                <Printer size={13} />
-                <span>Export / Print Summary</span>
+                <Award size={13} className="text-brand-400" />
+                <span>Export Executive PDF Scorecard</span>
               </button>
 
               <button
@@ -611,6 +642,15 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
           </div>
         </div>
       </div>
+
+      {/* Executive PDF Scorecard Modal */}
+      {showPdfModal && (
+        <PDFScorecardModal
+          isOpen={showPdfModal}
+          onClose={() => setShowPdfModal(false)}
+          data={candidate}
+        />
+      )}
     </div>
   );
 }

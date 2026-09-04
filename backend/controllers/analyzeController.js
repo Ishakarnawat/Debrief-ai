@@ -2,6 +2,7 @@ const axios = require("axios");
 const fs = require("fs");
 const FormData = require("form-data");
 const Analysis = require("../models/Analysis");
+const { dispatchCandidateWebhook } = require("./webhookController");
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
 
@@ -182,6 +183,13 @@ const analyzeInterview = async (req, res) => {
       isPrivate,
       saveVideoFile,
     });
+
+    // Trigger automated recruiter webhook if configured and not private
+    if (!isPrivate) {
+      dispatchCandidateWebhook(analysis, proctoring.riskLevel === "high" ? "flagged" : "completion").catch((e) => {
+        console.error("Async webhook dispatch error:", e);
+      });
+    }
 
     res.status(200).json({ success: true, analysisId: analysis._id, data: mlData });
   } catch (err) {

@@ -14,6 +14,8 @@ import {
   Trash2,
   Lock,
   Shield,
+  Award,
+  Code2,
 } from "lucide-react";
 
 import ScoreCard from "../components/ScoreCard";
@@ -23,6 +25,8 @@ import STARAnalysis from "../components/STARAnalysis";
 import FillerChart from "../components/FillerChart";
 import ImprovedAnswer from "../components/ImprovedAnswer";
 import TranscriptCard from "../components/TranscriptCard";
+import CompetencyRadarChart from "../components/CompetencyRadarChart";
+import PDFScorecardModal from "../components/PDFScorecardModal";
 import { useHistory } from "../hooks/useAnalyze";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -140,6 +144,7 @@ export default function Dashboard() {
 
   // Result can come from navigation state (just analyzed) or history selection
   const [data, setData] = useState(location.state?.result || null);
+  const [showScorecard, setShowScorecard] = useState(false);
 
   useEffect(() => {
     fetchHistory();
@@ -253,7 +258,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setShowScorecard(true)}
+            className="btn-primary text-xs inline-flex items-center gap-1.5 py-2 px-3 shadow-lg shadow-brand-500/20"
+          >
+            <Award size={13} /> Export PDF Scorecard
+          </button>
           <button
             onClick={() => {
               const idToDelete = data._id || data.analysisId;
@@ -345,6 +357,58 @@ export default function Dashboard() {
         <HiringScore score={data.hiring_score} />
       </div>
 
+      {/* Competency Radar & Rubric Section */}
+      <div className="card p-6 bg-surface-900 border border-white/10 rounded-2xl space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-white">5-Dimension Competency Radar</h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Multi-metric evaluation against industry standard baseline (7.5/10)
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowScorecard(true)}
+            className="btn-ghost text-xs inline-flex items-center gap-1.5 py-1.5 px-3 border border-brand-500/30 text-brand-300 hover:bg-brand-500/10 transition-colors"
+          >
+            <Award size={13} /> View Scorecard
+          </button>
+        </div>
+
+        <div className="bg-surface-950/60 border border-white/5 rounded-xl p-4">
+          <CompetencyRadarChart rubric={data.rubric} />
+        </div>
+      </div>
+
+      {/* Live Coding Challenge Results (if present) */}
+      {data.codeEvaluation && (
+        <div className="card p-5 bg-surface-900 border border-white/10 rounded-2xl space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-brand-400 font-semibold text-sm">
+              <Code2 size={16} />
+              <span>Technical Live Coding Evaluation</span>
+            </div>
+            <span
+              className={`text-xs px-2.5 py-0.5 rounded font-mono font-semibold ${
+                data.codeEvaluation.status === "PASSED"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                  : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+              }`}
+            >
+              {data.codeEvaluation.status} ({data.codeEvaluation.passedCount}/{data.codeEvaluation.totalCount} Test Suites)
+            </span>
+          </div>
+
+          <div className="p-4 bg-slate-950 rounded-xl border border-white/5 space-y-2 text-xs">
+            <div className="flex items-center justify-between text-slate-400 font-mono">
+              <span>Problem: <strong className="text-white">{data.codeEvaluation.problemTitle}</strong></span>
+              <span>Complexity: <strong className="text-brand-300">{data.codeEvaluation.complexity}</strong></span>
+            </div>
+            <p className="text-slate-300 leading-relaxed">{data.codeEvaluation.feedback}</p>
+          </div>
+        </div>
+      )}
+
       {/* STAR + Weaknesses */}
       <div className="grid sm:grid-cols-2 gap-4">
         <STARAnalysis star={data.star} />
@@ -373,6 +437,15 @@ export default function Dashboard() {
           <Video size={16} /> Conduct Another Interview
         </button>
       </div>
+
+      {/* PDF Scorecard Modal */}
+      {showScorecard && (
+        <PDFScorecardModal
+          isOpen={showScorecard}
+          onClose={() => setShowScorecard(false)}
+          data={data}
+        />
+      )}
     </div>
   );
 }

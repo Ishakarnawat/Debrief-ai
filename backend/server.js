@@ -9,6 +9,8 @@ const analyzeRoutes = require("./routes/analyze");
 const historyRoutes = require("./routes/history");
 const mediaRoutes = require("./routes/media");
 const { recruiterRouter, publicInvitationHandler } = require("./routes/recruiter");
+const webhookRoutes = require("./routes/webhook");
+const liveInterviewRoutes = require("./routes/liveInterview");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,6 +24,8 @@ app.use("/api/analyze", analyzeRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/media", mediaRoutes);
 app.use("/api/recruiter", recruiterRouter);
+app.use("/api/recruiter/webhooks", webhookRoutes);
+app.use("/api/live-interview", liveInterviewRoutes);
 app.get("/api/invitations/:token", publicInvitationHandler);
 
 // Health check

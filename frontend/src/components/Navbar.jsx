@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { AppUserButton } from "../context/AuthContext";
-import { BarChart2, Upload, LayoutDashboard } from "lucide-react";
+import { BarChart2, Upload, LayoutDashboard, Brain } from "lucide-react";
 
 export default function Navbar() {
   const { pathname } = useLocation();
@@ -31,6 +31,21 @@ export default function Navbar() {
         {/* Nav links */}
         <nav className="flex items-center gap-1">
           <Link
+            to="/live-interview"
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+              pathname === "/live-interview"
+                ? "bg-violet-500/20 text-violet-300 border border-violet-500/30"
+                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+            }`}
+          >
+            <Brain size={14} className="text-violet-400" />
+            <span>Live AI Room</span>
+            <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded bg-violet-500/20 text-violet-300 animate-pulse">
+              AI Live
+            </span>
+          </Link>
+
+          <Link
             to="/upload"
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
               pathname === "/upload"
@@ -39,7 +54,7 @@ export default function Navbar() {
             }`}
           >
             <Upload size={14} />
-            <span>Interview Session</span>
+            <span>Recorded Session</span>
           </Link>
 
           <Link

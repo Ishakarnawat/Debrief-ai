@@ -5,6 +5,7 @@ import UploadPage from "./pages/UploadPage";
 import Dashboard from "./pages/Dashboard";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import CandidateInvitePage from "./pages/CandidateInvitePage";
+import LiveInterviewPage from "./pages/LiveInterviewPage";
 import Navbar from "./components/Navbar";
 
 /* ── Protected route wrapper ─────────────────────────────────── */
@@ -50,11 +51,12 @@ export default function App() {
                 <Navbar />
                 <main className="flex-1">
                   <Routes>
-                    <Route path="/" element={<Navigate to="/upload" replace />} />
+                    <Route path="/" element={<Navigate to="/live-interview" replace />} />
+                    <Route path="/live-interview" element={<LiveInterviewPage />} />
                     <Route path="/upload" element={<UploadPage />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/recruiter" element={<RecruiterDashboard />} />
-                    <Route path="*" element={<Navigate to="/upload" replace />} />
+                    <Route path="*" element={<Navigate to="/live-interview" replace />} />
                   </Routes>
                 </main>
               </div>

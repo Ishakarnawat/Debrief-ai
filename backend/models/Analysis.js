@@ -83,6 +83,26 @@ const AnalysisSchema = new mongoose.Schema(
     invitationToken: String,
     isPrivate: { type: Boolean, default: false },
     saveVideoFile: { type: Boolean, default: true },
+    codeEvaluation: {
+      problemTitle: String,
+      language: String,
+      code: String,
+      passedCount: Number,
+      totalCount: Number,
+      executionTimeMs: Number,
+      status: { type: String, default: "PASSED" },
+      feedback: String,
+      complexity: String,
+    },
+    conversationHistory: [
+      {
+        role: { type: String, enum: ["ai", "candidate"] },
+        text: String,
+        timestamp: String,
+        stage: String,
+      },
+    ],
+    webhookDispatched: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

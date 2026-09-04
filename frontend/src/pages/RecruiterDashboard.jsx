@@ -23,9 +23,11 @@ import {
   Check,
   Briefcase,
   Calendar,
+  Bell,
 } from "lucide-react";
 import { useRecruiter } from "../hooks/useAnalyze";
 import CandidateReviewModal from "../components/CandidateReviewModal";
+import WebhookSettingsModal from "../components/WebhookSettingsModal";
 
 export default function RecruiterDashboard() {
   const {
@@ -60,6 +62,7 @@ export default function RecruiterDashboard() {
   const [generatedLink, setGeneratedLink] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showWebhookModal, setShowWebhookModal] = useState(false);
 
   useEffect(() => {
     fetchCandidates({ sortBy });
@@ -170,6 +173,14 @@ export default function RecruiterDashboard() {
             className="p-2.5 rounded-xl bg-surface-700 hover:bg-surface-600 text-slate-300 hover:text-white border border-white/10 transition-colors"
           >
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+          </button>
+
+          <button
+            onClick={() => setShowWebhookModal(true)}
+            className="btn-ghost text-xs inline-flex items-center gap-1.5 py-2.5 px-3.5 border border-white/10 rounded-xl hover:border-brand-500/30 transition-colors"
+          >
+            <Bell size={14} className="text-brand-400" />
+            <span>Webhook Integrations</span>
           </button>
 
           <button
@@ -758,6 +769,14 @@ export default function RecruiterDashboard() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Webhook Integrations Modal */}
+      {showWebhookModal && (
+        <WebhookSettingsModal
+          isOpen={showWebhookModal}
+          onClose={() => setShowWebhookModal(false)}
+        />
       )}
     </div>
   );

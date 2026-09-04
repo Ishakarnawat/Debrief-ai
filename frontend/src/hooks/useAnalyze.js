@@ -222,3 +222,70 @@ export function useRecruiter() {
     fetchInvitationByToken,
   };
 }
+
+export function useWebhooks() {
+  const { getToken } = useAppAuth();
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+
+  const fetchSettings = async () => {
+    setLoading(true);
+    try {
+      const token = (await getToken()) || "demo_token";
+      const { data } = await axios.get(`${API_URL}/api/recruiter/webhooks`, {
+        headers: { Authorization: `Bearer ${token}`, "x-demo-user-id": "demo_user" },
+      });
+      setSettings(data.data);
+      return data.data;
+    } catch (err) {
+      console.error("Failed to load webhook settings:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveSettings = async (payload) => {
+    setLoading(true);
+    try {
+      const token = (await getToken()) || "demo_token";
+      const { data } = await axios.post(`${API_URL}/api/recruiter/webhooks`, payload, {
+        headers: { Authorization: `Bearer ${token}`, "x-demo-user-id": "demo_user" },
+      });
+      setSettings(data.data);
+      return data.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.error || err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const testWebhookDispatch = async (payload = {}) => {
+    try {
+      const token = (await getToken()) || "demo_token";
+      const { data } = await axios.post(`${API_URL}/api/recruiter/webhooks/test`, payload, {
+        headers: { Authorization: `Bearer ${token}`, "x-demo-user-id": "demo_user" },
+      });
+      setTestResult(data);
+      if (data.logEntry) {
+        setSettings((prev) =>
+          prev ? { ...prev, logs: [data.logEntry, ...(prev.logs || [])] } : prev
+        );
+      }
+      return data;
+    } catch (err) {
+      throw new Error(err.response?.data?.error || err.message);
+    }
+  };
+
+  return {
+    settings,
+    loading,
+    testResult,
+    fetchSettings,
+    saveSettings,
+    testWebhookDispatch,
+  };
+}
+
