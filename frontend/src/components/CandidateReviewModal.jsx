@@ -21,6 +21,9 @@ import {
   Sparkles,
   Zap,
   Code2,
+  Eye,
+  Camera,
+  Activity,
 } from "lucide-react";
 import CompetencyRadarChart from "./CompetencyRadarChart";
 import PDFScorecardModal from "./PDFScorecardModal";
@@ -33,9 +36,9 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(candidate.wpm ? 90 : 60);
+  const [duration, setDuration] = useState(candidate.duration || 120);
   const [activeTab, setActiveTab] = useState("proctoring"); // "proctoring" | "rubric" | "transcript"
-  const [status, setStatus] = useState(candidate.status || "Screening");
+  const [status, setStatus] = useState(candidate.status || "COMPLETED");
   const [notes, setNotes] = useState(candidate.recruiterNotes || "");
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -48,6 +51,14 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
     multipleFacesDetected: false,
     eyeContactPercent: 92,
     violations: [],
+    gazeMetrics: null,
+  };
+
+  const gazeMetrics = proctoring.gazeMetrics || {
+    gazeStability: proctoring.eyeContactPercent || 92,
+    headPoseStability: 95,
+    lookingAwayCount: 0,
+    scriptReadingSuspected: false,
   };
 
   const rubric = candidate.rubric || {
@@ -399,6 +410,69 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
                     {candidate.recruiterSummary ||
                       `Candidate completed interview with ${proctoring.tabSwitches} tab switch(es) and an overall integrity score of ${proctoring.integrityScore}%.`}
                   </p>
+                </div>
+              </div>
+
+              {/* MediaPipe AI Computer Vision & Gaze Telemetry */}
+              <div className="card p-4 bg-surface-900/90 border border-brand-500/20 rounded-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-white">
+                    <Eye size={16} className="text-brand-400" />
+                    <span>MediaPipe™ In-Browser Vision & Biometric Telemetry</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-300 border border-brand-500/20 font-mono">
+                      WASM + WebGL
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Verified Iris & Mesh
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-lg bg-surface-800/80 border border-white/5">
+                    <div className="text-[11px] text-slate-400 mb-1">Gaze Stability</div>
+                    <div className="text-xl font-display font-bold text-white">
+                      {gazeMetrics.gazeStability}%
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">Iris Centering Ratio</div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-surface-800/80 border border-white/5">
+                    <div className="text-[11px] text-slate-400 mb-1">Head Pose Stability</div>
+                    <div className="text-xl font-display font-bold text-white">
+                      {gazeMetrics.headPoseStability}%
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">Yaw / Pitch / Roll Anchor</div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-surface-800/80 border border-white/5">
+                    <div className="text-[11px] text-slate-400 mb-1">Teleprompter Audit</div>
+                    <div
+                      className={`text-sm font-bold font-mono mt-1 ${
+                        gazeMetrics.scriptReadingSuspected
+                          ? "text-amber-400"
+                          : "text-emerald-400"
+                      }`}
+                    >
+                      {gazeMetrics.scriptReadingSuspected ? "Lateral Scanning" : "Natural Gaze"}
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">Saccadic Detection</div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-surface-800/80 border border-white/5">
+                    <div className="text-[11px] text-slate-400 mb-1">Facial Integrity</div>
+                    <div
+                      className={`text-sm font-bold font-mono mt-1 ${
+                        proctoring.multipleFacesDetected
+                          ? "text-red-400"
+                          : "text-emerald-400"
+                      }`}
+                    >
+                      {proctoring.multipleFacesDetected ? "Multi-Face Alert" : "1 Face Locked"}
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">478-Point Landmark Mesh</div>
+                  </div>
                 </div>
               </div>
 

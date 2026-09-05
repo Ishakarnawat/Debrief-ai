@@ -68,6 +68,14 @@ To make it look like a premium, modern SaaS product:
 - Generate one-click downloadable and printable executive PDF scorecard reports.
 - Automated Recruiter Webhooks (Slack, Discord, Custom JSON API) with delivery logs and test ping.
 
+### Phase 5A: MediaPipe In-Browser Vision & Gaze Tracking ✅ [IMPLEMENTED]
+- **478-Point Facial Mesh:** Real-time client-side `@mediapipe/tasks-vision` landmarker running on WebGL GPU with CPU fallback.
+- **Iris Gaze Tracking:** Normalized pupil ratio calculation detecting directional deviation (center, left, right, up, down).
+- **3D Head Pose Angles:** Mathematical projection of yaw, pitch, and roll to enforce interview attention compliance.
+- **Script-Reading / Teleprompter Detection:** Saccadic horizontal scanning heuristic to catch applicants reading off second monitors or hidden prompt windows.
+- **Live Cyberpunk HUD Overlay:** Transparent Canvas overlay rendering facial contours, iris reticles, and real-time security alerts on camera preview.
+- **Recruiter & Scorecard Telemetry:** End-to-end telemetry pipeline from candidate browser to MongoDB, Candidate Review Modal, and printable PDF Scorecard.
+
 ---
 
 ## 🏗️ Updated System Architecture

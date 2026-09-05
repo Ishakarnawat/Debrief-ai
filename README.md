@@ -139,12 +139,12 @@ flowchart TD
 - [x] Node.js Express server with Clerk authentication and MongoDB persistence.
 - [x] Initial JSON-based fallback data persistence and mock test suites.
 
-### 🟡 Phase 2: Core Vision & NLP AI Pipeline 
+### 🟡 Phase 2: Core Vision & NLP AI Pipeline `COMPLETED`
 - [x] FastAPI microservice integration with CORS & asynchronous request handling.
 - [x] OpenAI Whisper transcription engine with fallback mock pipelines.
 - [x] Filler word frequency analysis and speech velocity (WPM) calculation.
 - [x] STAR behavioral rubric scoring and AI-generated answer enhancements.
-- [ ] MediaPipe / OpenCV head-pose tracking and gaze-stability scoring.
+- [x] MediaPipe head-pose tracking and gaze-stability scoring.
 - [ ] Direct AWS S3 / Cloudinary presigned URL streaming for long video files.
 
 ### 🔵 Phase 3: Recruiter Workflows & Active Proctoring `COMPLETED`
@@ -162,6 +162,14 @@ flowchart TD
 - [x] One-click downloadable & printable executive PDF scorecard generation (`PDFScorecardModal`).
 - [x] 5-Dimension Competency Radar Chart comparing candidate performance against industry baseline.
 - [x] Automated Recruiter Webhooks (Slack Incoming Webhooks, Discord, Custom JSON API) with test-ping dispatch and delivery logs.
+
+### 🔴 Phase 5A: In-Browser MediaPipe Computer Vision & Gaze Tracking `COMPLETED`
+- [x] Client-side 478-point 3D facial landmark mesh detection (`@mediapipe/tasks-vision`) with WebGL GPU acceleration and CPU fallback.
+- [x] Real-time iris gaze classification (`CENTER`, `LOOKING_LEFT`, `LOOKING_RIGHT`, `LOOKING_UP`, `LOOKING_DOWN`).
+- [x] 3D Head Pose estimation (yaw, pitch, roll) from facial anchor vectors.
+- [x] Anti-teleprompter & script-reading detection using horizontal saccadic gaze pattern analysis.
+- [x] Cyberpunk biometric HUD overlay canvas (`VisionMeshOverlay.jsx`) with live telemetry crosshairs and status indicators.
+- [x] Instant proctoring incident capture and persistence directly to candidate analytics and scorecard reports.
 
 ---
 

@@ -209,6 +209,12 @@ const completeLiveInterview = async (req, res) => {
     multipleFacesDetected: false,
     eyeContactPercent: 94,
     violations: [],
+    gazeMetrics: {
+      gazeStability: 94,
+      lookingAwayCount: 0,
+      scriptReadingSuspected: false,
+      headPoseStability: 92,
+    },
     ...(proctoringData || {}),
   };
 

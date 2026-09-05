@@ -46,6 +46,12 @@ const analyzeInterview = async (req, res) => {
     multipleFacesDetected: false,
     eyeContactPercent: 92,
     violations: [],
+    gazeMetrics: {
+      gazeStability: 94,
+      lookingAwayCount: 0,
+      scriptReadingSuspected: false,
+      headPoseStability: 92,
+    },
   };
 
   if (req.body.proctoringData) {

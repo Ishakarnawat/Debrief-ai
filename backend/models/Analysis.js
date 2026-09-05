@@ -29,6 +29,13 @@ const ProctoringViolationSchema = new mongoose.Schema({
   severity: { type: String, enum: ["low", "medium", "high"], default: "medium" },
 });
 
+const GazeMetricsSchema = new mongoose.Schema({
+  gazeStability: { type: Number, default: 95 },
+  lookingAwayCount: { type: Number, default: 0 },
+  scriptReadingSuspected: { type: Boolean, default: false },
+  headPoseStability: { type: Number, default: 94 },
+});
+
 const ProctoringSchema = new mongoose.Schema({
   integrityScore: { type: Number, default: 100 },
   riskLevel: { type: String, enum: ["low", "medium", "high"], default: "low" },
@@ -36,6 +43,7 @@ const ProctoringSchema = new mongoose.Schema({
   multipleFacesDetected: { type: Boolean, default: false },
   eyeContactPercent: { type: Number, default: 90 },
   violations: [ProctoringViolationSchema],
+  gazeMetrics: GazeMetricsSchema,
 });
 
 const RubricSchema = new mongoose.Schema({

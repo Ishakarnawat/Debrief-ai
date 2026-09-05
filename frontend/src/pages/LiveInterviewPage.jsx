@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import LiveCodingEditor from "../components/LiveCodingEditor";
 import PDFScorecardModal from "../components/PDFScorecardModal";
+import VisionMeshOverlay from "../components/VisionMeshOverlay";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -76,9 +77,30 @@ export default function LiveInterviewPage() {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
 
-  // Proctoring Telemetry
+  // Proctoring Telemetry & MediaPipe Vision
   const [tabSwitches, setTabSwitches] = useState(0);
   const [proctoringAlert, setProctoringAlert] = useState(null);
+  const [visionMetrics, setVisionMetrics] = useState({
+    faceCount: 1,
+    gaze: { score: 96, isCentered: true, direction: "CENTER" },
+    headPose: { yaw: 0, pitch: 0 },
+    scriptReading: false,
+  });
+
+  const handleVisionMetrics = useCallback((metrics) => {
+    if (!metrics) return;
+    setVisionMetrics(metrics);
+    if (metrics.hasMultipleFaces) {
+      setProctoringAlert("🚨 Security Alert: Unauthorized secondary face detected in camera frame!");
+      setTimeout(() => setProctoringAlert(null), 4500);
+    } else if (metrics.faceCount === 0) {
+      setProctoringAlert("⚠️ Visibility Warning: Candidate face absent from camera frame.");
+      setTimeout(() => setProctoringAlert(null), 3500);
+    } else if (metrics.scriptReading) {
+      setProctoringAlert("⚠️ Attention Warning: Gaze diverted. Please maintain eye contact with camera.");
+      setTimeout(() => setProctoringAlert(null), 3500);
+    }
+  }, []);
 
   const currentStage = STAGES[currentStageIndex];
 
@@ -284,11 +306,25 @@ export default function LiveInterviewPage() {
           conversationHistory: historyToSave || conversationHistory,
           codeEvaluation,
           proctoringData: {
-            integrityScore: Math.max(70, 98 - tabSwitches * 10),
-            riskLevel: tabSwitches >= 3 ? "high" : tabSwitches >= 1 ? "medium" : "low",
+            integrityScore: Math.max(
+              70,
+              98 - tabSwitches * 10 - (visionMetrics.hasMultipleFaces ? 25 : 0)
+            ),
+            riskLevel:
+              tabSwitches >= 3 || visionMetrics.hasMultipleFaces
+                ? "high"
+                : tabSwitches >= 1
+                ? "medium"
+                : "low",
             tabSwitches,
-            multipleFacesDetected: false,
-            eyeContactPercent: 94,
+            multipleFacesDetected: visionMetrics.hasMultipleFaces || visionMetrics.faceCount > 1,
+            eyeContactPercent: visionMetrics.gaze?.score || 94,
+            gazeMetrics: {
+              gazeStability: visionMetrics.gaze?.score || 94,
+              lookingAwayCount: tabSwitches,
+              scriptReadingSuspected: visionMetrics.scriptReading || false,
+              headPoseStability: Math.max(70, 100 - Math.abs(visionMetrics.headPose?.yaw || 0)),
+            },
           },
           mediaType: "video",
           isPrivate,
@@ -375,13 +411,20 @@ export default function LiveInterviewPage() {
           <div className="card p-3 bg-slate-900 border border-white/10 rounded-2xl relative overflow-hidden shadow-xl">
             <div className="relative aspect-video rounded-xl overflow-hidden bg-black flex items-center justify-center">
               {cameraEnabled ? (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover -scale-x-100"
-                />
+                <>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover -scale-x-100"
+                  />
+                  <VisionMeshOverlay
+                    videoRef={videoRef}
+                    isActive={cameraEnabled}
+                    onMetricsUpdate={handleVisionMetrics}
+                  />
+                </>
               ) : (
                 <div className="text-slate-500 flex flex-col items-center gap-2">
                   <Video size={32} />

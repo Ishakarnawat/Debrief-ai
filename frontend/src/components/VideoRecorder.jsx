@@ -17,6 +17,7 @@ import {
   Users,
   AlertTriangle,
 } from "lucide-react";
+import VisionMeshOverlay from "./VisionMeshOverlay";
 
 export default function VideoRecorder({ onRecorded, currentQuestion, isProctoringEnabled = true }) {
   const videoPreviewRef = useRef(null);
@@ -45,6 +46,96 @@ export default function VideoRecorder({ onRecorded, currentQuestion, isProctorin
   const [facesDetected, setFacesDetected] = useState(1);
   const [multipleFacesEver, setMultipleFacesEver] = useState(false);
   const [integrityScore, setIntegrityScore] = useState(100);
+
+  const gazeMetricsRef = useRef({
+    gazeStability: 96,
+    lookingAwayCount: 0,
+    scriptReadingSuspected: false,
+    headPoseStability: 94,
+  });
+
+  const handleVisionMetrics = useCallback(
+    (metrics) => {
+      if (!metrics) return;
+      setFacesDetected(metrics.faceCount);
+      if (metrics.gaze && metrics.gaze.score) {
+        setEyeContactPercent(metrics.gaze.score);
+        gazeMetricsRef.current.gazeStability = metrics.gaze.score;
+      }
+
+      // 1. Multiple Faces Detection
+      if (metrics.hasMultipleFaces) {
+        setMultipleFacesEver(true);
+        setIntegrityScore((score) => Math.max(10, score - 25));
+        if (status === "recording") {
+          setViolations((vList) => {
+            const recent = vList.some(
+              (v) => v.type === "multiple_faces" && recordSeconds - v.timeInSeconds < 6
+            );
+            if (recent) return vList;
+            return [
+              ...vList,
+              {
+                timestamp: new Date().toISOString(),
+                timeInSeconds: recordSeconds,
+                type: "multiple_faces",
+                description: "Secondary person detected in camera frame (MediaPipe vision)",
+                severity: "high",
+              },
+            ];
+          });
+          setLatestAlert("🚨 Anti-Cheat Alert: Secondary face detected in frame!");
+        }
+      }
+
+      // 2. Script Reading / Gaze Divergence
+      if (metrics.scriptReading) {
+        gazeMetricsRef.current.scriptReadingSuspected = true;
+        gazeMetricsRef.current.lookingAwayCount += 1;
+        if (status === "recording") {
+          setViolations((vList) => {
+            const recent = vList.some(
+              (v) => v.type === "script_reading" && recordSeconds - v.timeInSeconds < 8
+            );
+            if (recent) return vList;
+            return [
+              ...vList,
+              {
+                timestamp: new Date().toISOString(),
+                timeInSeconds: recordSeconds,
+                type: "script_reading",
+                description: "Prolonged saccadic eye movement indicates reading off-screen text",
+                severity: "medium",
+              },
+            ];
+          });
+          setLatestAlert("⚠️ Proctoring Alert: Reading pattern detected. Look directly at the camera.");
+        }
+      }
+
+      // 3. Face Absence
+      if (metrics.faceCount === 0 && status === "recording") {
+        setViolations((vList) => {
+          const recent = vList.some(
+            (v) => v.type === "face_absent" && recordSeconds - v.timeInSeconds < 6
+          );
+          if (recent) return vList;
+          return [
+            ...vList,
+            {
+              timestamp: new Date().toISOString(),
+              timeInSeconds: recordSeconds,
+              type: "face_absent",
+              description: "Candidate face absent from camera frame",
+              severity: "high",
+            },
+          ];
+        });
+        setLatestAlert("⚠️ Visibility Warning: Candidate not detected in camera frame.");
+      }
+    },
+    [status, recordSeconds]
+  );
 
   // ─── Initialize Camera & Mic Stream ─────────────────────────────────────────
   const initMediaStream = useCallback(async () => {
@@ -282,6 +373,7 @@ export default function VideoRecorder({ onRecorded, currentQuestion, isProctorin
         multipleFacesDetected: multipleFacesEver,
         eyeContactPercent,
         violations,
+        gazeMetrics: gazeMetricsRef.current,
       };
 
       if (onRecorded) {
@@ -492,13 +584,13 @@ export default function VideoRecorder({ onRecorded, currentQuestion, isProctorin
                 isVideoOff ? "hidden" : "block"
               }`}
             />
-            {/* Subtle Face Alignment Guide Overlay */}
-            {status === "recording" && !isVideoOff && (
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <div className="w-48 h-60 rounded-full border border-dashed border-white/20 shadow-[0_0_40px_rgba(79,110,247,0.1)] flex items-center justify-center">
-                  <span className="text-[10px] text-white/40 uppercase tracking-widest font-mono">Face Center</span>
-                </div>
-              </div>
+            {/* Real-time MediaPipe Vision Mesh HUD Overlay */}
+            {!isVideoOff && status !== "preview" && (
+              <VisionMeshOverlay
+                videoRef={videoPreviewRef}
+                isActive={true}
+                onMetricsUpdate={handleVisionMetrics}
+              />
             )}
             {isVideoOff && (
               <div className="text-center p-6">
