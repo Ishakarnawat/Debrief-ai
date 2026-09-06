@@ -84,6 +84,17 @@ To make it look like a premium, modern SaaS product:
 - **Biometric & Vision Comparison:** Direct comparison of MediaPipe gaze stability, head pose compliance, and script-reading flags.
 - **Enterprise ATS Data Exporter:** One-click generation of Greenhouse CSV, Lever CSV, and universal ATS JSON payloads (`atsExporter.js` and `/api/recruiter/candidates/export-ats`).
 
+### Phase 5C: AWS S3 Direct Presigned Streaming & Production Docker ✅ [IMPLEMENTED]
+- **AWS S3 Presigned PUT Engine:** Pure Node.js crypto AWS Signature Version 4 implementation for zero-overhead direct client-to-bucket uploads.
+- **Multi-Cloud Storage Broker:** Supports AWS S3, Cloudinary video uploads, and local stream pipelines (`/api/media/direct-upload/:token`).
+- **Dynamic Client Streaming:** `cloudUploader.js` integrated into `useAnalyze` hook with real-time percentage upload progress callbacks.
+- **Production Containerization:**
+  - `backend/Dockerfile` (Node.js 18-alpine, secure non-root user, healthchecked).
+  - `ml-service/Dockerfile` (Python 3.10-slim with FFmpeg binary & uvicorn).
+  - `frontend/Dockerfile` (Multi-stage build with NGINX reverse-proxying & asset caching).
+- **1-Command Docker Compose:** Orchestrates Frontend, Express API, FastAPI ML Service, and MongoDB with healthchecks and volume persistence.
+- **Deployment Template:** Turnkey root `.env.example` file.
+
 ---
 
 ## 🏗️ Updated System Architecture

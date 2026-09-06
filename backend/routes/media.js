@@ -2,9 +2,76 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { requireAuth } = require("../middleware/auth");
+const {
+  getStorageConfig,
+  generatePresignedUpload,
+  directUploadTokens,
+} = require("../services/cloudStorage");
 
 const router = express.Router();
 const UPLOAD_DIR = path.join(__dirname, "../uploads");
+
+// Ensure upload directory exists
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
+/**
+ * GET /api/media/storage-config
+ * Returns active storage provider capabilities (AWS S3, Cloudinary, Local Direct).
+ */
+router.get("/storage-config", requireAuth, (req, res) => {
+  res.json({
+    success: true,
+    config: getStorageConfig(),
+  });
+});
+
+/**
+ * POST /api/media/presigned-url
+ * Generates direct-to-cloud presigned upload URL or direct stream token.
+ */
+router.post("/presigned-url", requireAuth, (req, res) => {
+  const { filename = "interview.mp4", contentType = "video/mp4" } = req.body;
+  const presigned = generatePresignedUpload({ filename, contentType });
+  res.json({
+    success: true,
+    ...presigned,
+  });
+});
+
+/**
+ * PUT /api/media/direct-upload/:token
+ * High-performance direct streaming endpoint for local binary uploads (bypasses Multer multipart overhead).
+ */
+router.put("/direct-upload/:token", (req, res) => {
+  const token = req.params.token;
+  const tokenData = directUploadTokens.get(token);
+
+  if (!tokenData) {
+    return res.status(403).json({ error: "Invalid or expired direct upload token." });
+  }
+
+  const targetPath = path.join(UPLOAD_DIR, tokenData.filename);
+  const writeStream = fs.createWriteStream(targetPath);
+
+  req.pipe(writeStream);
+
+  writeStream.on("finish", () => {
+    directUploadTokens.delete(token);
+    res.json({
+      success: true,
+      filename: tokenData.filename,
+      mediaUrl: `/api/media/${tokenData.filename}`,
+      bytesWritten: writeStream.bytesWritten,
+    });
+  });
+
+  writeStream.on("error", (err) => {
+    console.error("Direct upload stream error:", err);
+    res.status(500).json({ error: "Failed to stream direct media payload." });
+  });
+});
 
 /**
  * GET /api/media/:filename

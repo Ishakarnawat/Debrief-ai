@@ -1,0 +1,93 @@
+version: "3.8"
+
+# ==============================================================================
+# Debrief.ai — Enterprise Multi-Container Orchestration (Phase 5C)
+# Orchestrates: Frontend (Nginx), Backend (Node.js), ML Service (FastAPI), MongoDB
+# ==============================================================================
+
+services:
+  # ─── 1. Frontend Web Client (React + Vite + Nginx Reverse Proxy) ───────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: debrief-frontend
+    ports:
+      - "80:80"
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - debrief_net
+    restart: unless-stopped
+
+  # ─── 2. Backend API Gateway (Node.js + Express) ────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: debrief-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo:27017/debrief-ai
+      - ML_SERVICE_URL=http://ml-service:8000
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY:-}
+      # Optional Cloud Storage Credentials
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET:-}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-}
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      mongo:
+        condition: service_started
+      ml-service:
+        condition: service_healthy
+    networks:
+      - debrief_net
+    restart: unless-stopped
+
+  # ─── 3. AI & ML Microservice (FastAPI + Whisper + FFmpeg) ──────────────────
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: debrief-ml-service
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    networks:
+      - debrief_net
+    restart: unless-stopped
+
+  # ─── 4. Database (MongoDB Official) ────────────────────────────────────────
+  mongo:
+    image: mongo:6-jammy
+    container_name: debrief-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - debrief_net
+    restart: unless-stopped
+
+# ─── Volumes & Networks ───────────────────────────────────────────────────────
+volumes:
+  mongo_data:
+    driver: local
+  backend_uploads:
+    driver: local
+
+networks:
+  debrief_net:
+    driver: bridge

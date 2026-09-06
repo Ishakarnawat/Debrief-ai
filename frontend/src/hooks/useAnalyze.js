@@ -17,10 +17,40 @@ export function useAnalyze() {
 
     try {
       const token = (await getToken()) || "demo_token";
+      const authHeaders = {
+        Authorization: `Bearer ${token}`,
+        "x-demo-user-id": "demo_user",
+      };
+
+      // Direct cloud streaming optimization for large video files
+      let directUploadInfo = null;
+      if (file && file.size > 2 * 1024 * 1024 && file.type?.startsWith("video/")) {
+        try {
+          const { uploadDirectToCloud } = await import("../utils/cloudUploader");
+          const directRes = await uploadDirectToCloud({
+            blob: file,
+            filename: file.name || "recording.mp4",
+            contentType: file.type || "video/mp4",
+            authHeaders,
+          });
+          if (directRes && directRes.directUpload) {
+            directUploadInfo = directRes;
+          }
+        } catch (e) {
+          console.warn("Direct cloud upload bypassed:", e);
+        }
+      }
 
       const formData = new FormData();
-      formData.append("file", file);
-      formData.append("audio", file); // backward compatibility
+      if (directUploadInfo) {
+        formData.append("directMediaUrl", directUploadInfo.mediaUrl);
+        if (directUploadInfo.fileKey) {
+          formData.append("fileKey", directUploadInfo.fileKey);
+        }
+      } else if (file) {
+        formData.append("file", file);
+        formData.append("audio", file); // backward compatibility
+      }
 
       if (metadata.candidateName) formData.append("candidateName", metadata.candidateName);
       if (metadata.candidateEmail) formData.append("candidateEmail", metadata.candidateEmail);
@@ -37,8 +67,7 @@ export function useAnalyze() {
 
       const { data } = await axios.post(`${API_URL}/api/analyze`, formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
-          "x-demo-user-id": "demo_user",
+          ...authHeaders,
         },
         timeout: 120000,
       });

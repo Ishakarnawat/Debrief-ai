@@ -1,5 +1,6 @@
 const axios = require("axios");
 const fs = require("fs");
+const path = require("path");
 const FormData = require("form-data");
 const Analysis = require("../models/Analysis");
 const { dispatchCandidateWebhook } = require("./webhookController");
@@ -12,14 +13,25 @@ const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
  */
 const analyzeInterview = async (req, res) => {
   const uploadedFile = req.file || (req.files && req.files.length > 0 ? req.files[0] : null);
+  const directMediaUrl = req.body.directMediaUrl || req.body.mediaUrl;
+  const directFileKey = req.body.fileKey;
 
-  if (!uploadedFile) {
-    return res.status(400).json({ error: "No audio or video file uploaded" });
+  if (!uploadedFile && !directMediaUrl && !directFileKey) {
+    return res.status(400).json({ error: "No audio or video file uploaded or direct cloud URL provided" });
   }
 
   const userId = req.auth.userId;
-  const filePath = uploadedFile.path;
-  const isVideo = uploadedFile.mimetype.startsWith("video/");
+  let filePath = uploadedFile ? uploadedFile.path : null;
+
+  // If direct stream was saved to local disk
+  if (!filePath && directFileKey) {
+    const localPath = path.join(__dirname, "../uploads", path.basename(directFileKey));
+    if (fs.existsSync(localPath)) {
+      filePath = localPath;
+    }
+  }
+
+  const isVideo = uploadedFile ? uploadedFile.mimetype.startsWith("video/") : true;
   const mediaType = req.body.mediaType || (isVideo ? "video" : "audio");
 
   const candidateName = req.body.candidateName || "Candidate";
@@ -36,7 +48,10 @@ const analyzeInterview = async (req, res) => {
     (!invitationToken && req.body.isPrivate !== "false");
 
   const saveVideoFile = req.body.saveVideoFile !== "false" && req.body.saveVideoFile !== false;
-  let mediaUrl = saveVideoFile ? `/api/media/${uploadedFile.filename}` : "";
+  let mediaUrl = directMediaUrl || (saveVideoFile && uploadedFile ? `/api/media/${uploadedFile.filename}` : "");
+  if (!mediaUrl && filePath) {
+    mediaUrl = `/api/media/${path.basename(filePath)}`;
+  }
 
   // Parse proctoring data from frontend telemetry if provided
   let proctoring = {

@@ -145,7 +145,7 @@ flowchart TD
 - [x] Filler word frequency analysis and speech velocity (WPM) calculation.
 - [x] STAR behavioral rubric scoring and AI-generated answer enhancements.
 - [x] MediaPipe head-pose tracking and gaze-stability scoring.
-- [ ] Direct AWS S3 / Cloudinary presigned URL streaming for long video files.
+- [x] Direct AWS S3 / Cloudinary presigned URL streaming for long video files.
 
 ### 🔵 Phase 3: Recruiter Workflows & Active Proctoring `COMPLETED`
 - [x] Dynamic custom interview link generation (`/interview/:token`) for recruiters.
@@ -178,6 +178,15 @@ flowchart TD
 - [x] Category-by-category head-to-head leaders breakdown and horizontal differential comparison bars.
 - [x] Greenhouse-compatible CSV, Lever-compatible CSV, and universal ATS JSON export engines (`atsExporter.js`).
 - [x] Backend comparison (`/api/recruiter/candidates/compare`) and ATS export endpoints (`/api/recruiter/candidates/export-ats`).
+
+### 🟡 Phase 5C: AWS S3 Direct Presigned Streaming & Production Docker `COMPLETED`
+- [x] High-performance AWS S3 presigned PUT streaming engine with native AWS Signature Version 4 (`cloudStorage.js`).
+- [x] Direct Cloudinary signed video uploads and local low-overhead direct streaming fallback (`/api/media/direct-upload/:token`).
+- [x] Dynamic client-side cloud streaming uploader (`cloudUploader.js`) integrated into `useAnalyze` with upload progress reporting.
+- [x] Multi-stage production `frontend/Dockerfile` serving built bundle through NGINX with SPA routing, static asset caching, and reverse-proxying.
+- [x] Optimized `backend/Dockerfile` (Node.js 18 Alpine with non-root security context) and `ml-service/Dockerfile` (Python 3.10 with FFmpeg & curl healthcheck).
+- [x] Production `docker-compose.yml` orchestrating Frontend, Backend, FastAPI ML Service, and MongoDB with healthchecks and persistent volumes.
+- [x] Turnkey `.env.example` template with unified cloud storage and authentication configuration.
 
 ---
 
