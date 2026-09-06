@@ -171,6 +171,14 @@ flowchart TD
 - [x] Cyberpunk biometric HUD overlay canvas (`VisionMeshOverlay.jsx`) with live telemetry crosshairs and status indicators.
 - [x] Instant proctoring incident capture and persistence directly to candidate analytics and scorecard reports.
 
+### 🟠 Phase 5B: Multi-Candidate Comparison Matrix & ATS Exporter `COMPLETED`
+- [x] Multi-candidate selection dock on Recruiter Dashboard (supports 2 to 4 candidates head-to-head).
+- [x] Overlaid multi-candidate 5-dimension Competency Radar Chart with custom color-coded paths and legends.
+- [x] Deep-dive side-by-side comparison modal (`CandidateComparisonModal.jsx`) across hiring scores, live coding challenges, and MediaPipe vision telemetry.
+- [x] Category-by-category head-to-head leaders breakdown and horizontal differential comparison bars.
+- [x] Greenhouse-compatible CSV, Lever-compatible CSV, and universal ATS JSON export engines (`atsExporter.js`).
+- [x] Backend comparison (`/api/recruiter/candidates/compare`) and ATS export endpoints (`/api/recruiter/candidates/export-ats`).
+
 ---
 
 ## 💻 Tech Stack

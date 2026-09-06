@@ -195,6 +195,9 @@ const LocalAnalysis = {
           if (!regex.test(String(item[key] || ""))) return false;
         } else if (val && typeof val === "object" && "$ne" in val) {
           if (item[key] === val.$ne) return false;
+        } else if (val && typeof val === "object" && "$in" in val) {
+          const inArray = Array.isArray(val.$in) ? val.$in.map(String) : [];
+          if (!inArray.includes(String(item[key]))) return false;
         } else if (item[key] !== val && String(item[key]) !== String(val)) {
           return false;
         }

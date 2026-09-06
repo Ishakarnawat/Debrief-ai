@@ -24,10 +24,14 @@ import {
   Briefcase,
   Calendar,
   Bell,
+  Trophy,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useRecruiter } from "../hooks/useAnalyze";
 import CandidateReviewModal from "../components/CandidateReviewModal";
+import CandidateComparisonModal from "../components/CandidateComparisonModal";
 import WebhookSettingsModal from "../components/WebhookSettingsModal";
+import { generateGreenhouseCSV, generateLeverCSV, downloadCSV } from "../utils/atsExporter";
 
 export default function RecruiterDashboard() {
   const {
@@ -52,6 +56,10 @@ export default function RecruiterDashboard() {
 
   // Selected Candidate for Deep Dive Modal
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+
+  // Multi-Candidate Comparison State (Phase 5B)
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState([]);
+  const [showComparisonModal, setShowComparisonModal] = useState(false);
 
   // Invitation Modal State
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -98,6 +106,42 @@ export default function RecruiterDashboard() {
 
     return true;
   });
+
+  // Candidate selection for comparison matrix
+  const handleToggleCandidateSelect = (id, e) => {
+    if (e) e.stopPropagation();
+    setSelectedCandidateIds((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((item) => item !== id);
+      }
+      if (prev.length >= 4) {
+        return prev;
+      }
+      return [...prev, id];
+    });
+  };
+
+  const handleSelectAllVisible = () => {
+    const visibleIds = filteredCandidates.slice(0, 4).map((c) => c._id);
+    if (
+      visibleIds.length > 0 &&
+      visibleIds.every((id) => selectedCandidateIds.includes(id))
+    ) {
+      setSelectedCandidateIds((prev) =>
+        prev.filter((id) => !visibleIds.includes(id))
+      );
+    } else {
+      setSelectedCandidateIds(visibleIds);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedCandidateIds([]);
+  };
+
+  const selectedCandidateObjects = candidates.filter((c) =>
+    selectedCandidateIds.includes(c._id)
+  );
 
   // Handle invitation creation
   const handleCreateInvite = async (e) => {
@@ -286,6 +330,17 @@ export default function RecruiterDashboard() {
               <Kanban size={13} />
               <span>Pipeline Kanban</span>
             </button>
+
+            {selectedCandidateIds.length >= 2 && (
+              <button
+                type="button"
+                onClick={() => setShowComparisonModal(true)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm hover:bg-emerald-500/30 transition-all ml-1 animate-fade-in"
+              >
+                <Trophy size={13} />
+                <span>Compare Matrix ({selectedCandidateIds.length})</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -357,6 +412,18 @@ export default function RecruiterDashboard() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-white/[0.08] bg-surface-800/60 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+                  <th className="py-3.5 px-3 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all visible candidates"
+                      checked={
+                        filteredCandidates.length > 0 &&
+                        filteredCandidates.slice(0, 4).every((c) => selectedCandidateIds.includes(c._id))
+                      }
+                      onChange={handleSelectAllVisible}
+                      className="rounded border-white/20 bg-surface-800 text-brand-500 focus:ring-0 cursor-pointer"
+                    />
+                  </th>
                   <th className="py-3.5 px-4">Candidate</th>
                   <th className="py-3.5 px-4">Role</th>
                   <th className="py-3.5 px-4 text-center">AI Hire Score</th>
@@ -369,7 +436,7 @@ export default function RecruiterDashboard() {
               <tbody className="divide-y divide-white/[0.06]">
                 {filteredCandidates.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
+                    <td colSpan={8} className="py-12 text-center text-slate-400">
                       No candidates found matching the selected filters.
                     </td>
                   </tr>
@@ -383,12 +450,29 @@ export default function RecruiterDashboard() {
                       tabSwitches >= 2 ||
                       candidate.proctoring?.multipleFacesDetected;
 
+                    const isSelected = selectedCandidateIds.includes(candidate._id);
+
                     return (
                       <tr
                         key={candidate._id}
-                        className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                        className={`transition-colors group cursor-pointer ${
+                          isSelected
+                            ? "bg-brand-500/10 hover:bg-brand-500/15"
+                            : "hover:bg-white/[0.02]"
+                        }`}
                         onClick={() => setSelectedCandidate(candidate)}
                       >
+                        {/* Checkbox */}
+                        <td className="py-4 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => handleToggleCandidateSelect(candidate._id, e)}
+                            disabled={!isSelected && selectedCandidateIds.length >= 4}
+                            className="rounded border-white/20 bg-surface-800 text-brand-500 focus:ring-0 cursor-pointer disabled:opacity-30"
+                          />
+                        </td>
+
                         {/* Candidate Info */}
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
@@ -557,23 +641,39 @@ export default function RecruiterDashboard() {
                         candidate.proctoring?.riskLevel === "high" ||
                         (candidate.proctoring?.tabSwitches || 0) >= 1;
 
+                      const isSelected = selectedCandidateIds.includes(candidate._id);
+
                       return (
                         <div
                           key={candidate._id}
                           onClick={() => setSelectedCandidate(candidate)}
-                          className="p-3.5 rounded-xl bg-surface-800/80 hover:bg-surface-700/80 border border-white/5 hover:border-brand-500/40 transition-all cursor-pointer space-y-2.5 group"
+                          className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 group ${
+                            isSelected
+                              ? "bg-brand-500/10 border-brand-500/50 shadow-md shadow-brand-500/10"
+                              : "bg-surface-800/80 hover:bg-surface-700/80 border-white/5 hover:border-brand-500/40"
+                          }`}
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <h4 className="font-semibold text-white text-xs group-hover:text-brand-400 transition-colors">
-                                {candidate.candidateName || "Candidate"}
-                              </h4>
-                              <p className="text-slate-400 text-[11px] truncate mt-0.5">
-                                {candidate.targetRole || "Software Engineer"}
-                              </p>
+                            <div className="flex items-start gap-2 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => handleToggleCandidateSelect(candidate._id, e)}
+                                onClick={(e) => e.stopPropagation()}
+                                disabled={!isSelected && selectedCandidateIds.length >= 4}
+                                className="mt-0.5 rounded border-white/20 bg-surface-800 text-brand-500 focus:ring-0 cursor-pointer disabled:opacity-30 shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <h4 className="font-semibold text-white text-xs group-hover:text-brand-400 transition-colors truncate">
+                                  {candidate.candidateName || "Candidate"}
+                                </h4>
+                                <p className="text-slate-400 text-[11px] truncate mt-0.5">
+                                  {candidate.targetRole || "Software Engineer"}
+                                </p>
+                              </div>
                             </div>
                             <span
-                              className={`text-xs font-display font-bold px-2 py-0.5 rounded ${
+                              className={`text-xs font-display font-bold px-2 py-0.5 rounded shrink-0 ${
                                 score >= 80
                                   ? "bg-emerald-500/15 text-emerald-400"
                                   : score >= 65
@@ -655,6 +755,79 @@ export default function RecruiterDashboard() {
           onClose={() => setSelectedCandidate(null)}
           onUpdateStatus={handleUpdateCandidate}
         />
+      )}
+
+      {/* Multi-Candidate Comparison Matrix Modal (Phase 5B) */}
+      {showComparisonModal && selectedCandidateObjects.length >= 2 && (
+        <CandidateComparisonModal
+          candidates={selectedCandidateObjects}
+          onClose={() => setShowComparisonModal(false)}
+          onRemoveCandidate={(id) =>
+            setSelectedCandidateIds((prev) => prev.filter((item) => item !== id))
+          }
+          onSelectCandidateForReview={(cand) => {
+            setSelectedCandidate(cand);
+            setShowComparisonModal(false);
+          }}
+        />
+      )}
+
+      {/* Floating Bottom Comparison & ATS Action Dock */}
+      {selectedCandidateIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-surface-950/95 border border-brand-500/30 rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4 backdrop-blur-md animate-fade-in flex-wrap max-w-[95vw]">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-brand-500 animate-pulse" />
+            <span className="font-semibold text-white">
+              {selectedCandidateIds.length} of 4 Candidates Selected
+            </span>
+          </div>
+
+          <div className="h-4 w-px bg-white/10 hidden sm:block" />
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              disabled={selectedCandidateIds.length < 2}
+              onClick={() => setShowComparisonModal(true)}
+              className="btn-primary py-1.5 px-3.5 text-xs inline-flex items-center gap-1.5 font-semibold disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-brand-500/20"
+            >
+              <Trophy size={14} />
+              <span>Compare Head-to-Head ({selectedCandidateIds.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const csv = generateGreenhouseCSV(selectedCandidateObjects);
+                downloadCSV(`ats-greenhouse-export-${Date.now()}.csv`, csv);
+              }}
+              className="btn-ghost py-1.5 px-3 text-xs border border-white/10 hover:border-brand-500/40 inline-flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors"
+            >
+              <FileSpreadsheet size={14} className="text-emerald-400" />
+              <span>Greenhouse CSV</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const csv = generateLeverCSV(selectedCandidateObjects);
+                downloadCSV(`ats-lever-export-${Date.now()}.csv`, csv);
+              }}
+              className="btn-ghost py-1.5 px-3 text-xs border border-white/10 hover:border-brand-500/40 inline-flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors"
+            >
+              <FileSpreadsheet size={14} className="text-blue-400" />
+              <span>Lever CSV</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleClearSelection}
+              className="text-xs text-slate-400 hover:text-white px-2 py-1 transition-colors ml-1"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Generate Interview Link Modal */}

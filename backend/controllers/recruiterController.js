@@ -165,10 +165,191 @@ const getInvitationByToken = async (req, res) => {
   res.json({ success: true, data: invitation });
 };
 
+/**
+ * POST /api/recruiter/candidates/compare
+ * Body: { candidateIds: string[] }
+ * Returns comparative metrics, category leaders, and deltas between chosen candidates.
+ */
+const compareCandidates = async (req, res) => {
+  try {
+    const { candidateIds } = req.body;
+    if (!Array.isArray(candidateIds) || candidateIds.length < 2) {
+      return res.status(400).json({ error: "At least two candidate IDs required for comparison." });
+    }
+
+    const candidates = await Analysis.find({
+      _id: { $in: candidateIds },
+      isPrivate: { $ne: true },
+    }).lean();
+
+    if (candidates.length < 2) {
+      return res.status(404).json({ error: "Could not find enough valid candidates to compare." });
+    }
+
+    // Determine category leaders
+    const dimensions = [
+      { key: "technicalAccuracy", label: "Tech Accuracy" },
+      { key: "communicationClarity", label: "Communication" },
+      { key: "problemSolving", label: "Problem Solving" },
+      { key: "starCompliance", label: "STAR Method" },
+      { key: "confidenceBodyLanguage", label: "Confidence" },
+    ];
+
+    const leaders = {};
+    dimensions.forEach((dim) => {
+      let maxScore = -1;
+      let winner = null;
+      candidates.forEach((c) => {
+        const score = c.rubric?.[dim.key] ?? 7.5;
+        if (score > maxScore) {
+          maxScore = score;
+          winner = { id: c._id, name: c.candidateName, score };
+        }
+      });
+      leaders[dim.key] = winner;
+    });
+
+    // Determine top overall scorer
+    const sorted = [...candidates].sort((a, b) => (b.hiring_score || 0) - (a.hiring_score || 0));
+    const topPerformer = sorted[0];
+
+    res.json({
+      success: true,
+      data: {
+        candidates,
+        topPerformer: {
+          id: topPerformer._id,
+          name: topPerformer.candidateName,
+          score: topPerformer.hiring_score,
+          role: topPerformer.targetRole,
+        },
+        leaders,
+        candidateCount: candidates.length,
+      },
+    });
+  } catch (err) {
+    console.error("Comparison Error:", err);
+    res.status(500).json({ error: "Failed to compare candidates." });
+  }
+};
+
+/**
+ * POST /api/recruiter/candidates/export-ats
+ * Body: { candidateIds: string[], format: "csv" | "json", atsTarget: "greenhouse" | "lever" | "generic" }
+ * Exports candidates to Greenhouse / Lever CSV or standard ATS JSON.
+ */
+const exportCandidatesATS = async (req, res) => {
+  try {
+    const { candidateIds, format = "csv", atsTarget = "greenhouse" } = req.body;
+    let query = { isPrivate: { $ne: true } };
+    if (Array.isArray(candidateIds) && candidateIds.length > 0) {
+      query._id = { $in: candidateIds };
+    }
+
+    const candidates = await Analysis.find(query).sort({ createdAt: -1 }).lean();
+
+    if (format === "json") {
+      return res.json({
+        success: true,
+        exportVersion: "2.0",
+        atsTarget,
+        generatedAt: new Date().toISOString(),
+        candidateCount: candidates.length,
+        candidates: candidates.map((c) => ({
+          id: c._id,
+          name: c.candidateName,
+          email: c.candidateEmail,
+          role: c.targetRole,
+          hiringScore: c.hiring_score,
+          recommendation: c.recommendation,
+          rubric: c.rubric,
+          proctoring: c.proctoring,
+          codeEvaluation: c.codeEvaluation,
+          date: c.createdAt,
+        })),
+      });
+    }
+
+    // Default CSV Generation
+    const escape = (val) => {
+      if (val === null || val === undefined) return '""';
+      return `"${String(val).replace(/"/g, '""')}"`;
+    };
+
+    let csvContent = "";
+    if (atsTarget === "lever") {
+      const headers = [
+        "candidate_name",
+        "email",
+        "posting_title",
+        "overall_score",
+        "verdict",
+        "integrity_score",
+        "date",
+      ];
+      const rows = candidates.map((c) =>
+        [
+          escape(c.candidateName),
+          escape(c.candidateEmail),
+          escape(c.targetRole),
+          escape(c.hiring_score),
+          escape(c.recommendation),
+          escape(c.proctoring?.integrityScore || 100),
+          escape(new Date(c.createdAt).toISOString()),
+        ].join(",")
+      );
+      csvContent = [headers.join(","), ...rows].join("\r\n");
+    } else {
+      // Greenhouse / Standard format
+      const headers = [
+        "Candidate Name",
+        "Email",
+        "Target Role",
+        "Hiring Score",
+        "Recommendation",
+        "Integrity Score",
+        "Risk Level",
+        "Tech Score",
+        "Communication Score",
+        "Problem Solving",
+        "Date",
+      ];
+      const rows = candidates.map((c) =>
+        [
+          escape(c.candidateName),
+          escape(c.candidateEmail),
+          escape(c.targetRole),
+          escape(c.hiring_score),
+          escape(c.recommendation),
+          escape(c.proctoring?.integrityScore || 100),
+          escape(c.proctoring?.riskLevel || "low"),
+          escape(c.rubric?.technicalAccuracy || 7.5),
+          escape(c.rubric?.communicationClarity || 7.8),
+          escape(c.rubric?.problemSolving || 8.0),
+          escape(new Date(c.createdAt).toISOString().split("T")[0]),
+        ].join(",")
+      );
+      csvContent = [headers.join(","), ...rows].join("\r\n");
+    }
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="ats-export-${atsTarget}-${Date.now()}.csv"`
+    );
+    return res.status(200).send(csvContent);
+  } catch (err) {
+    console.error("ATS Export Error:", err);
+    res.status(500).json({ error: "Failed to generate ATS export." });
+  }
+};
+
 module.exports = {
   getCandidates,
   updateCandidateStatus,
   createInvitation,
   getInvitations,
   getInvitationByToken,
+  compareCandidates,
+  exportCandidatesATS,
 };

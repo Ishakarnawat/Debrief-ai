@@ -76,6 +76,14 @@ To make it look like a premium, modern SaaS product:
 - **Live Cyberpunk HUD Overlay:** Transparent Canvas overlay rendering facial contours, iris reticles, and real-time security alerts on camera preview.
 - **Recruiter & Scorecard Telemetry:** End-to-end telemetry pipeline from candidate browser to MongoDB, Candidate Review Modal, and printable PDF Scorecard.
 
+### Phase 5B: Multi-Candidate Comparison Matrix & ATS Exporter ✅ [IMPLEMENTED]
+- **Head-to-Head Comparison Matrix:** Side-by-side evaluation modal (`CandidateComparisonModal.jsx`) comparing 2 to 4 candidates simultaneously.
+- **Multi-Candidate Overlaid Radar Chart:** Custom Recharts multi-series radar visualization benchmarking candidates against each other and industry standards.
+- **Dimension Differential Metrics:** Category-by-category leader identification and comparative horizontal progress meters across 5 core competencies.
+- **Live Coding Face-Off:** Side-by-side technical evaluation comparing problem solutions, test suite pass rates (e.g. 3/3), and asymptotic complexity.
+- **Biometric & Vision Comparison:** Direct comparison of MediaPipe gaze stability, head pose compliance, and script-reading flags.
+- **Enterprise ATS Data Exporter:** One-click generation of Greenhouse CSV, Lever CSV, and universal ATS JSON payloads (`atsExporter.js` and `/api/recruiter/candidates/export-ats`).
+
 ---
 
 ## 🏗️ Updated System Architecture
