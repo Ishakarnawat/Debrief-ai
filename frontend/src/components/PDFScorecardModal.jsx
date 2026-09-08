@@ -47,29 +47,290 @@ export default function PDFScorecardModal({ isOpen, onClose, data }) {
   };
   const codeEval = data.codeEvaluation || null;
 
+  const [isPrinting, setIsPrinting] = React.useState(false);
+
   const handlePrint = () => {
-    window.print();
+    setIsPrinting(true);
+    const element = document.getElementById("printable-scorecard");
+    if (!element) {
+      setIsPrinting(false);
+      window.print();
+      return;
+    }
+
+    try {
+      // Gather all style sheets and inline styles from parent window
+      const styleTags = Array.from(document.querySelectorAll("link[rel='stylesheet'], style"))
+        .map((tag) => tag.outerHTML)
+        .join("\n");
+
+      // Remove any leftover print iframe
+      const oldFrame = document.getElementById("debrief-print-frame");
+      if (oldFrame) oldFrame.remove();
+
+      const iframe = document.createElement("iframe");
+      iframe.id = "debrief-print-frame";
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      iframe.style.visibility = "hidden";
+      document.body.appendChild(iframe);
+
+      const printDoc = iframe.contentWindow.document;
+      printDoc.open();
+      printDoc.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>${candidateName} - Debrief.ai Candidate Scorecard</title>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            ${styleTags}
+            <style>
+              @page {
+                size: A4 portrait;
+                margin: 10mm;
+              }
+              html, body {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+                margin: 0 !important;
+                padding: 12px !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              #printable-scorecard {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+              }
+              /* Force high-contrast text colors to prevent white-on-white text */
+              h1, h2, h3, h4, .text-white {
+                color: #0f172a !important;
+              }
+              p, .text-slate-300, .text-slate-200 {
+                color: #334155 !important;
+              }
+              .text-slate-400 {
+                color: #475569 !important;
+              }
+              .text-slate-500 {
+                color: #64748b !important;
+              }
+              /* Card backgrounds & borders for crisp paper/PDF print */
+              .bg-surface-800,
+              .bg-surface-800\\/80,
+              .bg-surface-800\\/70,
+              .bg-surface-800\\/60,
+              .bg-surface-800\\/40,
+              .bg-surface-900,
+              .bg-surface-950,
+              .bg-slate-800,
+              .bg-slate-950 {
+                background-color: #f8fafc !important;
+                border: 1px solid #cbd5e1 !important;
+                color: #0f172a !important;
+              }
+              .border-white\\/10,
+              .border-white\\/5 {
+                border-color: #cbd5e1 !important;
+              }
+              /* Accent badge backgrounds */
+              .bg-brand-500\\/20,
+              .bg-brand-500\\/10 {
+                background-color: #eff6ff !important;
+                border: 1px solid #93c5fd !important;
+                color: #1d4ed8 !important;
+              }
+              .bg-emerald-500\\/20,
+              .bg-emerald-500\\/10 {
+                background-color: #ecfdf5 !important;
+                border: 1px solid #a7f3d0 !important;
+                color: #047857 !important;
+              }
+              .bg-amber-500\\/20,
+              .bg-amber-500\\/10 {
+                background-color: #fffbeb !important;
+                border: 1px solid #fde68a !important;
+                color: #b45309 !important;
+              }
+              .text-brand-400, .text-brand-300 {
+                color: #2563eb !important;
+              }
+              .text-emerald-400, .text-emerald-300 {
+                color: #059669 !important;
+              }
+              .text-amber-400, .text-amber-300 {
+                color: #d97706 !important;
+              }
+              /* Recharts radar adjustments */
+              svg {
+                overflow: visible !important;
+              }
+              .recharts-polar-grid-angle line,
+              .recharts-polar-grid-concentric path {
+                stroke: #cbd5e1 !important;
+              }
+              .recharts-polar-angle-axis text tspan {
+                fill: #1e293b !important;
+                font-weight: 600 !important;
+              }
+              .no-print {
+                display: none !important;
+              }
+            </style>
+          </head>
+          <body>
+            <div id="printable-scorecard">
+              ${element.innerHTML}
+            </div>
+          </body>
+        </html>
+      `);
+      printDoc.close();
+
+      setTimeout(() => {
+        setIsPrinting(false);
+        try {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        } catch (err) {
+          console.warn("Iframe print error, falling back to window.print():", err);
+          window.print();
+        } finally {
+          setTimeout(() => {
+            if (document.body.contains(iframe)) {
+              iframe.remove();
+            }
+          }, 4000);
+        }
+      }, 400);
+    } catch (e) {
+      console.error("Print orchestration error:", e);
+      setIsPrinting(false);
+      window.print();
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto animate-fade-in">
-      {/* Print Styles Sheet */}
+    <div className="pdf-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto animate-fade-in">
+      {/* Fallback Native Print Styles Sheet */}
       <style>{`
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: 10mm;
+          }
+          html, body {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            height: auto !important;
+            min-height: 100% !important;
+            overflow: visible !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           body * {
             visibility: hidden;
           }
-          #printable-scorecard, #printable-scorecard * {
-            visibility: visible;
+          .pdf-modal-backdrop,
+          .pdf-modal-container,
+          #printable-scorecard,
+          #printable-scorecard * {
+            visibility: visible !important;
+          }
+          .pdf-modal-backdrop {
+            position: static !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+            height: auto !important;
+            display: block !important;
+          }
+          .pdf-modal-container {
+            position: static !important;
+            max-height: none !important;
+            overflow: visible !important;
+            border: none !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            background: #ffffff !important;
           }
           #printable-scorecard {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            background: white !important;
+            position: static !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            background: #ffffff !important;
             color: #0f172a !important;
-            padding: 24px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+            display: block !important;
+          }
+          #printable-scorecard h1,
+          #printable-scorecard h2,
+          #printable-scorecard h3,
+          #printable-scorecard .text-white {
+            color: #0f172a !important;
+          }
+          #printable-scorecard p,
+          #printable-scorecard .text-slate-300,
+          #printable-scorecard .text-slate-200 {
+            color: #334155 !important;
+          }
+          #printable-scorecard .text-slate-400 {
+            color: #475569 !important;
+          }
+          #printable-scorecard .text-slate-500 {
+            color: #64748b !important;
+          }
+          #printable-scorecard .bg-surface-800,
+          #printable-scorecard .bg-surface-800\\/80,
+          #printable-scorecard .bg-surface-800\\/70,
+          #printable-scorecard .bg-surface-800\\/60,
+          #printable-scorecard .bg-surface-800\\/40,
+          #printable-scorecard .bg-surface-900,
+          #printable-scorecard .bg-surface-950,
+          #printable-scorecard .bg-slate-800,
+          #printable-scorecard .bg-slate-950 {
+            background-color: #f8fafc !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #0f172a !important;
+          }
+          #printable-scorecard .border-white\\/10,
+          #printable-scorecard .border-white\\/5 {
+            border-color: #cbd5e1 !important;
+          }
+          #printable-scorecard .text-brand-400 {
+            color: #2563eb !important;
+          }
+          #printable-scorecard .text-emerald-400 {
+            color: #059669 !important;
+          }
+          #printable-scorecard .text-amber-400 {
+            color: #d97706 !important;
+          }
+          #printable-scorecard .recharts-polar-grid-angle line,
+          #printable-scorecard .recharts-polar-grid-concentric path {
+            stroke: #cbd5e1 !important;
+          }
+          #printable-scorecard .recharts-polar-angle-axis text tspan {
+            fill: #1e293b !important;
+            font-weight: 600 !important;
           }
           .no-print {
             display: none !important;
@@ -77,7 +338,7 @@ export default function PDFScorecardModal({ isOpen, onClose, data }) {
         }
       `}</style>
 
-      <div className="relative w-full max-w-4xl bg-surface-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col">
+      <div className="pdf-modal-container relative w-full max-w-4xl bg-surface-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col">
         {/* Top Control Bar */}
         <div className="no-print flex items-center justify-between px-6 py-4 border-b border-white/10 bg-surface-950">
           <div className="flex items-center gap-2">
@@ -91,10 +352,11 @@ export default function PDFScorecardModal({ isOpen, onClose, data }) {
             <button
               type="button"
               onClick={handlePrint}
-              className="btn-primary inline-flex items-center gap-2 text-xs py-2 px-4 shadow-lg shadow-brand-500/20"
+              disabled={isPrinting}
+              className="btn-primary inline-flex items-center gap-2 text-xs py-2 px-4 shadow-lg shadow-brand-500/20 disabled:opacity-50"
             >
               <Printer size={14} />
-              <span>Print / Save as PDF</span>
+              <span>{isPrinting ? "Preparing PDF..." : "Print / Save as PDF"}</span>
             </button>
             <button
               type="button"
