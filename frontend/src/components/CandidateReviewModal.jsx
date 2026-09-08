@@ -24,6 +24,7 @@ import {
   Eye,
   Camera,
   Activity,
+  Cloud,
 } from "lucide-react";
 import CompetencyRadarChart from "./CompetencyRadarChart";
 import PDFScorecardModal from "./PDFScorecardModal";
@@ -276,10 +277,22 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
           {mediaFullUrl ? (
             <div className="card p-4 bg-slate-950 border border-white/10 rounded-2xl space-y-3">
               <div className="flex items-center justify-between text-xs text-slate-300">
-                <span className="font-semibold flex items-center gap-1.5">
-                  <Play size={14} className="text-brand-400" />
-                  Candidate Interview Recording with Proctoring Timeline
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold flex items-center gap-1.5">
+                    <Play size={14} className="text-brand-400" />
+                    Candidate Interview Recording with Proctoring Timeline
+                  </span>
+                  {candidate.mediaUrl && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded font-semibold bg-brand-500/10 text-brand-300 border border-brand-500/20 flex items-center gap-1">
+                      <Cloud size={10} className="text-brand-400" />
+                      {candidate.mediaUrl.includes("s3.") || candidate.mediaUrl.includes("amazonaws")
+                        ? "AWS S3"
+                        : candidate.mediaUrl.includes("cloudinary")
+                        ? "Cloudinary CDN"
+                        : "Direct Stream"}
+                    </span>
+                  )}
+                </div>
                 <span className="font-mono text-slate-400">
                   {formatSec(currentTime)} / {formatSec(duration)}
                 </span>

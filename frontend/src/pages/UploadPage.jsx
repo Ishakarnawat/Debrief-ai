@@ -18,6 +18,7 @@ import {
   HelpCircle,
   ShieldCheck,
   ChevronDown,
+  Cloud,
 } from "lucide-react";
 import { useAnalyze } from "../hooks/useAnalyze";
 import VideoRecorder from "../components/VideoRecorder";
@@ -53,7 +54,18 @@ const STEPS = [
 export default function UploadPage() {
   const navigate = useNavigate();
   const inputRef = useRef(null);
-  const { analyze, loading, error } = useAnalyze();
+  const { analyze, loading, error, uploadProgress, uploadProvider } = useAnalyze();
+  const [storageProvider, setStorageProvider] = useState("Direct Stream");
+
+  useEffect(() => {
+    import("../utils/cloudUploader").then(({ getStorageConfig }) => {
+      getStorageConfig().then((cfg) => {
+        if (cfg?.provider === "aws_s3") setStorageProvider("AWS S3 Presigned");
+        else if (cfg?.provider === "cloudinary") setStorageProvider("Cloudinary CDN");
+        else setStorageProvider("Direct Streaming");
+      });
+    });
+  }, []);
 
   // Mode Selection: "video" | "audio" | "upload"
   const [activeTab, setActiveTab] = useState("video");
@@ -251,10 +263,16 @@ export default function UploadPage() {
             <ShieldCheck size={16} className="text-brand-400" />
             <span>Interview Session Context</span>
           </div>
-          <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>AI Proctoring Guard Active</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-brand-300 bg-brand-500/10 border border-brand-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-medium">
+              <Cloud size={12} className="text-brand-400" />
+              <span>{storageProvider}</span>
+            </span>
+            <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>AI Proctoring Guard Active</span>
+            </span>
+          </div>
         </div>
 
         <div className="grid sm:grid-cols-3 gap-4">
@@ -675,6 +693,40 @@ export default function UploadPage() {
           <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/20 rounded-xl p-4">
             <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
             <p className="text-red-400 text-xs sm:text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* Real-time Cloud Streaming Progress Bar */}
+        {loading && uploadProgress > 0 && (
+          <div className="card-sm bg-surface-900 border border-brand-500/30 p-4 rounded-xl space-y-2.5 shadow-lg shadow-brand-500/10">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2 text-brand-300 font-medium">
+                <Cloud size={14} className="text-brand-400 animate-pulse" />
+                <span>
+                  {uploadProvider === "aws_s3"
+                    ? "Direct Presigned Streaming to AWS S3..."
+                    : uploadProvider === "cloudinary"
+                    ? "Direct Streaming to Cloudinary Media CDN..."
+                    : "Direct Streaming to Processing Pipeline..."}
+                </span>
+              </div>
+              <span className="font-mono font-bold text-white text-xs bg-brand-500/20 px-2 py-0.5 rounded border border-brand-500/30">
+                {uploadProgress}%
+              </span>
+            </div>
+            <div className="w-full bg-surface-850 rounded-full h-2 overflow-hidden border border-white/5">
+              <div
+                className="bg-gradient-to-r from-brand-500 via-cyan-400 to-emerald-400 h-2 rounded-full transition-all duration-200 shadow-[0_0_12px_rgba(56,189,248,0.5)]"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                Zero-Memory Server Bypass
+              </span>
+              <span>{uploadProgress === 100 ? "Upload complete — Finalizing AI scoring" : "Streaming raw video chunks"}</span>
+            </div>
           </div>
         )}
 

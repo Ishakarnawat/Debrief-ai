@@ -44,7 +44,7 @@ app.use((err, req, res, next) => {
 
 // ─── Connect DB & Start ───────────────────────────────────────────────────────
 const start = async () => {
-  const mongoUri = process.env.MONGODB_URI || "mongodb://localhost:27017/debrief_ai";
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || "mongodb://localhost:27017/debrief_ai";
   try {
     await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 2000 });
     console.log("✅ MongoDB connected");

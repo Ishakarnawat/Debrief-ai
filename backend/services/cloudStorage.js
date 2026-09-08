@@ -163,7 +163,7 @@ function generateLocalDirectUpload({ filename, contentType }) {
   });
 
   // Expire after 30 minutes
-  setTimeout(() => directUploadTokens.delete(uploadToken), 30 * 60 * 1000);
+  setTimeout(() => directUploadTokens.delete(uploadToken), 30 * 60 * 1000).unref();
 
   return {
     provider: "local_streaming",

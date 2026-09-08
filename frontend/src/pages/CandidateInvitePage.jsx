@@ -14,6 +14,7 @@ import {
   HelpCircle,
   Sparkles,
   Loader2,
+  Cloud,
 } from "lucide-react";
 import { useRecruiter, useAnalyze } from "../hooks/useAnalyze";
 import VideoRecorder from "../components/VideoRecorder";
@@ -22,7 +23,7 @@ export default function CandidateInvitePage() {
   const { token } = useParams();
   const navigate = useNavigate();
   const { fetchInvitationByToken } = useRecruiter();
-  const { analyze, loading: isSubmitting, error: submitError } = useAnalyze();
+  const { analyze, loading: isSubmitting, error: submitError, uploadProgress, uploadProvider } = useAnalyze();
 
   const [invitation, setInvitation] = useState(null);
   const [loadingInvite, setLoadingInvite] = useState(true);
@@ -259,6 +260,40 @@ export default function CandidateInvitePage() {
           <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 flex items-center gap-2">
             <AlertCircle size={15} />
             <span>{submitError}</span>
+          </div>
+        )}
+
+        {/* Real-time Cloud Streaming Progress Bar */}
+        {isSubmitting && uploadProgress > 0 && (
+          <div className="card-sm bg-surface-900 border border-brand-500/30 p-4 rounded-xl space-y-2.5 shadow-lg shadow-brand-500/10">
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2 text-brand-300 font-medium">
+                <Cloud size={14} className="text-brand-400 animate-pulse" />
+                <span>
+                  {uploadProvider === "aws_s3"
+                    ? "Direct Presigned Streaming to AWS S3..."
+                    : uploadProvider === "cloudinary"
+                    ? "Direct Streaming to Cloudinary Media CDN..."
+                    : "Direct Streaming to Processing Pipeline..."}
+                </span>
+              </div>
+              <span className="font-mono font-bold text-white text-xs bg-brand-500/20 px-2 py-0.5 rounded border border-brand-500/30">
+                {uploadProgress}%
+              </span>
+            </div>
+            <div className="w-full bg-surface-850 rounded-full h-2 overflow-hidden border border-white/5">
+              <div
+                className="bg-gradient-to-r from-brand-500 via-cyan-400 to-emerald-400 h-2 rounded-full transition-all duration-200 shadow-[0_0_12px_rgba(56,189,248,0.5)]"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                Zero-Overhead Direct Cloud Ingestion
+              </span>
+              <span>{uploadProgress === 100 ? "Stream complete — Finalizing AI scoring" : "Uploading recording payload"}</span>
+            </div>
           </div>
         )}
 

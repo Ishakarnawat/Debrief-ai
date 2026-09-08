@@ -25,7 +25,7 @@ export async function getStorageConfig(authHeaders = {}) {
 
 /**
  * Uploads a recorded video Blob directly using presigned URL credentials
- * with real-time percentage progress callback.
+ * with real-time percentage progress callback and provider telemetry.
  */
 export async function uploadDirectToCloud({
   blob,
@@ -35,7 +35,7 @@ export async function uploadDirectToCloud({
   onProgress = () => {},
 }) {
   try {
-    // 1. Request presigned URL from backend
+    // 1. Request presigned URL or token from backend
     const presignedRes = await fetch(`${API_URL}/api/media/presigned-url`, {
       method: "POST",
       headers: {
@@ -59,32 +59,64 @@ export async function uploadDirectToCloud({
       ? presigned.uploadUrl
       : `${API_URL}${presigned.uploadUrl}`;
 
-    // 2. Perform direct binary upload with XMLHttpRequest for upload progress tracking
+    // 2. Perform direct binary or multipart upload with XMLHttpRequest for upload progress tracking
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open(presigned.method || "PUT", targetUrl);
+      const method = presigned.method || "PUT";
+      xhr.open(method, targetUrl);
 
-      // Set headers if provided
-      if (presigned.headers) {
-        Object.entries(presigned.headers).forEach(([k, v]) => {
-          xhr.setRequestHeader(k, v);
+      let payloadToSend = blob;
+
+      // Handle Cloudinary signed multipart upload
+      if (presigned.provider === "cloudinary" && presigned.params) {
+        const formData = new FormData();
+        Object.entries(presigned.params).forEach(([k, v]) => {
+          formData.append(k, v);
         });
+        formData.append("file", blob, filename);
+        payloadToSend = formData;
+      } else {
+        // Handle raw binary streams (AWS S3 and Local Direct Streaming)
+        if (presigned.headers) {
+          Object.entries(presigned.headers).forEach(([k, v]) => {
+            xhr.setRequestHeader(k, v);
+          });
+        }
       }
 
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
-          const percent = Math.round((event.loaded / event.total) * 100);
-          onProgress(percent);
+          const percent = Math.min(99, Math.round((event.loaded / event.total) * 100));
+          onProgress(percent, presigned.provider);
         }
       };
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
+          onProgress(100, presigned.provider);
+          let responseJson = null;
+          try {
+            responseJson = JSON.parse(xhr.responseText);
+          } catch (e) {
+            // S3 responses are often XML or empty 200/204
+          }
+
+          let resolvedMediaUrl = presigned.mediaUrl;
+          let resolvedFileKey = presigned.fileKey;
+
+          if (presigned.provider === "cloudinary" && responseJson?.secure_url) {
+            resolvedMediaUrl = responseJson.secure_url;
+            resolvedFileKey = responseJson.public_id || presigned.fileKey;
+          } else if (presigned.provider === "local_streaming" && responseJson?.mediaUrl) {
+            resolvedMediaUrl = responseJson.mediaUrl;
+            resolvedFileKey = responseJson.filename || presigned.fileKey;
+          }
+
           resolve({
             success: true,
             provider: presigned.provider,
-            mediaUrl: presigned.mediaUrl,
-            fileKey: presigned.fileKey,
+            mediaUrl: resolvedMediaUrl,
+            fileKey: resolvedFileKey,
             directUpload: true,
           });
         } else {
@@ -96,10 +128,10 @@ export async function uploadDirectToCloud({
         reject(new Error("Network error during direct cloud upload."));
       };
 
-      xhr.send(blob);
+      xhr.send(payloadToSend);
     });
   } catch (err) {
-    console.warn("Direct cloud upload bypassed or failed, falling back to multipart:", err);
+    console.warn("Direct cloud upload bypassed or failed, falling back to standard multipart:", err);
     return { directUpload: false, error: err.message };
   }
 }

@@ -9,11 +9,15 @@ export function useAnalyze() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadProvider, setUploadProvider] = useState(null);
 
   const analyze = async (file, metadata = {}) => {
     setLoading(true);
     setError(null);
     setResult(null);
+    setUploadProgress(0);
+    setUploadProvider(null);
 
     try {
       const token = (await getToken()) || "demo_token";
@@ -32,9 +36,14 @@ export function useAnalyze() {
             filename: file.name || "recording.mp4",
             contentType: file.type || "video/mp4",
             authHeaders,
+            onProgress: (pct, provider) => {
+              setUploadProgress(pct);
+              if (provider) setUploadProvider(provider);
+            },
           });
           if (directRes && directRes.directUpload) {
             directUploadInfo = directRes;
+            setUploadProvider(directRes.provider || "direct_stream");
           }
         } catch (e) {
           console.warn("Direct cloud upload bypassed:", e);
@@ -83,7 +92,7 @@ export function useAnalyze() {
     }
   };
 
-  return { analyze, loading, error, result };
+  return { analyze, loading, error, result, uploadProgress, uploadProvider };
 }
 
 export function useHistory() {

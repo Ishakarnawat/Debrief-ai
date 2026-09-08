@@ -16,6 +16,7 @@ import {
   Shield,
   Award,
   Code2,
+  Cloud,
 } from "lucide-react";
 
 import ScoreCard from "../components/ScoreCard";
@@ -213,8 +214,20 @@ export default function Dashboard() {
     );
   }
 
-  const mediaFullUrl = data.mediaUrl ? `${API_URL}${data.mediaUrl}` : null;
+  const mediaFullUrl = data.mediaUrl
+    ? data.mediaUrl.startsWith("http")
+      ? data.mediaUrl
+      : `${API_URL}${data.mediaUrl}`
+    : null;
   const isVideoMedia = data.mediaType === "video";
+
+  const storageBadge = data.mediaUrl?.includes("s3.") || data.mediaUrl?.includes("amazonaws")
+    ? "AWS S3"
+    : data.mediaUrl?.includes("cloudinary")
+    ? "Cloudinary CDN"
+    : data.mediaUrl
+    ? "Direct Stream"
+    : null;
 
   // ── Full results view ────────────────────────────────────────
   return (
@@ -242,6 +255,12 @@ export default function Dashboard() {
               >
                 {isVideoMedia ? "VIDEO SESSION" : "AUDIO SESSION"}
               </span>
+              {storageBadge && (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded font-semibold bg-brand-500/10 text-brand-300 border border-brand-500/20 flex items-center gap-1">
+                  <Cloud size={10} className="text-brand-400" />
+                  {storageBadge}
+                </span>
+              )}
               <span
                 className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
                   data.isPrivate !== false
