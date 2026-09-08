@@ -428,9 +428,13 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* STAR + Weaknesses */}
-      <div className="grid sm:grid-cols-2 gap-4">
+      {/* STAR Analysis */}
+      <div>
         <STARAnalysis star={data.star} />
+      </div>
+
+      {/* Actionable Coaching & Growth Playbook */}
+      <div>
         <WeaknessList weaknesses={data.weaknesses} />
       </div>
 
@@ -439,9 +443,16 @@ export default function Dashboard() {
         <FillerChart fillerWords={data.filler_words} />
       </div>
 
-      {/* Improved answer + follow-up */}
+      {/* AI Executive Interview Coach (Model STAR Answer + Comparison + Drills) */}
       <div>
-        <ImprovedAnswer answer={data.improved_answer} followUp={data.follow_up_question} />
+        <ImprovedAnswer
+          answer={data.improved_answer}
+          improvedStar={data.improved_star || data.improvedSTAR}
+          transcript={data.transcript}
+          actionPlan={data.action_plan || data.actionPlan}
+          coachingSummary={data.coaching_summary || data.coachingSummary}
+          followUp={data.follow_up_question}
+        />
       </div>
 
       {/* Transcript */}

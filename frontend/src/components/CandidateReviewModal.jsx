@@ -654,6 +654,42 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
                 </div>
               )}
 
+              {/* Actionable Coaching & Growth Opportunities */}
+              {candidate.weaknesses && candidate.weaknesses.length > 0 && (
+                <div className="card p-4 bg-surface-800/60 border border-white/[0.08] rounded-xl space-y-3">
+                  <span className="text-xs font-semibold text-rose-400 uppercase tracking-wider block">
+                    Actionable Coaching & Growth Opportunities
+                  </span>
+                  <div className="space-y-2.5">
+                    {candidate.weaknesses.map((w, idx) => (
+                      <div key={idx} className="p-3 rounded-xl bg-surface-900/80 border border-white/5 space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-slate-100">{w.issue}</span>
+                          <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20">
+                            {w.category || (w.impact ? `${w.impact} Priority` : "Coaching Item")}
+                          </span>
+                        </div>
+                        {w.whyItMatters && (
+                          <p className="text-slate-400 text-[11px] leading-relaxed">
+                            <strong className="text-amber-300">Why Interviewers Flag This:</strong> {w.whyItMatters}
+                          </p>
+                        )}
+                        {w.howToFix && (
+                          <p className="text-slate-300 text-[11px] leading-relaxed">
+                            <strong className="text-brand-300">Action Step:</strong> {w.howToFix}
+                          </p>
+                        )}
+                        {w.example && (
+                          <p className="text-emerald-300 text-[11px] font-mono italic leading-relaxed pl-2 border-l border-emerald-500/30">
+                            "{w.example}"
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {candidate.improved_answer && (
                 <div className="p-4 rounded-xl bg-brand-500/5 border border-brand-500/20 text-xs space-y-1">
                   <span className="text-brand-400 font-semibold block">AI Enhanced Benchmark Answer:</span>

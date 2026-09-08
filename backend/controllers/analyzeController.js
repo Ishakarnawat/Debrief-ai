@@ -7,6 +7,50 @@ const { dispatchCandidateWebhook } = require("./webhookController");
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
 
+function normalizeWeaknesses(weaknesses) {
+  if (!Array.isArray(weaknesses) || weaknesses.length === 0) {
+    return [
+      {
+        issue: "Quantifiable Impact Metrics Omitted",
+        impact: "high",
+        category: "Impact & Metrics",
+        whyItMatters: "Hiring managers cannot assess the real magnitude of your engineering impact without baseline numbers and resulting gains.",
+        howToFix: "Anchor your result in the Metric Formula: state the initial problem baseline, your intervention, and the resulting percentage or dollar improvement.",
+        example: "Instead of 'improved load times significantly', say 'cut p99 latency from 2.4s to 380ms, boosting conversion by 14%'."
+      },
+      {
+        issue: "Individual Contribution Blurred by Team Pronouns",
+        impact: "medium",
+        category: "STAR Delivery",
+        whyItMatters: "Interviewers evaluate YOU, not your previous squad. Using 'we did' without defining your specific role obscures your competence.",
+        howToFix: "Use 'I owned...', 'I designed...', or 'I led...' for actions, reserving 'we' strictly for the collective company outcome.",
+        example: "Instead of 'We chose Redis to cache responses', say 'I evaluated Redis vs Memcached and designed our write-through caching tier'."
+      }
+    ];
+  }
+
+  return weaknesses.map((w) => {
+    if (typeof w === "string") {
+      return {
+        issue: w,
+        impact: "medium",
+        category: "Communication",
+        whyItMatters: "Clear communication and structured responses allow the panel to accurately gauge your technical decision making.",
+        howToFix: "Structure your narrative using the STAR framework with concrete technical trade-offs and verified results.",
+        example: "Lead with the engineering constraints and finish with the measured business impact.",
+      };
+    }
+    return {
+      issue: w.issue || "Need more quantifiable results",
+      impact: w.impact || "medium",
+      category: w.category || (w.issue && (w.issue.toLowerCase().includes("metric") || w.issue.toLowerCase().includes("result")) ? "Impact & Metrics" : "STAR Delivery"),
+      whyItMatters: w.whyItMatters || "Interviewers need clear rationale and measurable signals to rate your seniority accurately.",
+      howToFix: w.howToFix || "Break your answer into concrete steps: what you diagnosed, what you built, and what the final measurable outcome was.",
+      example: w.example || "State the baseline metric, your technical action, and the quantified outcome (e.g., 'reduced deploy time from 45m to 8m').",
+    };
+  });
+}
+
 /**
  * POST /api/analyze
  * Receives audio/video file, forwards to ML service, stores result in MongoDB.
@@ -129,15 +173,46 @@ const analyzeInterview = async (req, res) => {
       mlData = mlResponse.data;
     } else {
       // Fallback realistic ML payload if media stream was direct or ML service in mock mode
+      const fallbackStar = {
+        situation: "In my previous engineering role, our distributed microservices tier experienced severe p99 latency spikes of up to 2.8 seconds during peak traffic hours.",
+        task: "My objective was to identify the root architectural bottleneck and re-engineer our caching tier to guarantee sub-200ms latency under 5x peak load.",
+        action: "I instrumented distributed tracing via OpenTelemetry, pinpointed redundant SQL queries, and implemented a multi-tiered Redis caching layer with proactive cache warming.",
+        result: "This cut our p99 response times from 2.8s down to 145ms—a 95% latency reduction—while lowering database compute load by 40% and completely eliminating transaction timeouts."
+      };
+
       mlData = {
         transcript:
           "In my previous engineering projects, I led the transition towards modern distributed microservices. " +
           "We identified latency bottlenecks under high concurrent loads, re-architected database caching layers, " +
           "and improved p99 query speeds by 65%.",
         scores: { clarity: 8.5, depth: 8.2, relevance: 8.4 },
-        weaknesses: ["Could include more specific details on telemetry and monitoring"],
+        weaknesses: normalizeWeaknesses([
+          {
+            issue: "Quantifiable Impact Metrics Omitted",
+            impact: "high",
+            category: "Impact & Metrics",
+            whyItMatters: "Hiring managers cannot assess the real magnitude of your engineering impact without baseline numbers and resulting gains.",
+            howToFix: "Anchor your result in the Metric Formula: state the initial problem baseline, your intervention, and the resulting percentage or dollar improvement.",
+            example: "Instead of 'improved query speeds significantly', say 'cut p99 latency from 2.8s to 145ms, eliminating timeouts during 5x traffic surges'."
+          },
+          {
+            issue: "Individual Contribution Blurred by Team Pronouns",
+            impact: "medium",
+            category: "STAR Delivery",
+            whyItMatters: "Interviewers evaluate YOU, not your previous squad. Using 'we' without defining your specific role obscures your competence.",
+            howToFix: "Use 'I owned...', 'I designed...', or 'I led...' for actions, reserving 'we' strictly for the collective company outcome.",
+            example: "Instead of 'We re-architected caching', say 'I evaluated Redis vs Memcached, instrumented distributed tracing, and implemented our write-through caching tier'."
+          }
+        ]),
         star: { situation: true, task: true, action: true, result: true },
-        improved_answer: "Provide deeper metrics around deployment rollbacks and canary release strategies.",
+        improved_star: fallbackStar,
+        improved_answer: `${fallbackStar.situation} ${fallbackStar.task} ${fallbackStar.action} ${fallbackStar.result}`,
+        action_plan: [
+          "Anchor your story with the Metric Formula: explicitly state the problem baseline, your action, and the resulting percentage or dollar gain.",
+          "Replace verbal filler words ('um', 'like', 'you know') with a deliberate 1-second pause to project confidence and authority.",
+          "Dedicate 50% of your interview time to the 'Action' phase: focus clearly on what YOU personally diagnosed, built, and delivered."
+        ],
+        coaching_summary: "You demonstrated solid foundational domain knowledge and articulated the core technical premise well. To elevate this response into top-tier hire territory, focus on anchoring your narrative with hard metrics and emphasizing your personal architectural ownership throughout the story.",
         follow_up_question: "How did you guarantee data consistency during cache invalidation?",
         hiring_score: 85.0,
         filler_words: { um: 1, uh: 0, like: 1 },
@@ -187,7 +262,33 @@ const analyzeInterview = async (req, res) => {
       `Proctoring integrity remained at ${proctoring.integrityScore}% (${proctoring.riskLevel.toUpperCase()} risk) ` +
       `with ${proctoring.tabSwitches} tab switch(es) detected. Recommended as ${recommendation}.`;
 
+    // Normalize coaching fields
+    const normalizedWeaknesses = normalizeWeaknesses(mlData.weaknesses);
+    const actionPlan = mlData.action_plan || mlData.actionPlan || [
+      "Anchor your story with the Metric Formula: state the initial problem baseline, your intervention, and the resulting percentage or dollar improvement.",
+      "Replace verbal filler words with a deliberate 1-second pause to project confidence and executive presence.",
+      "Dedicate 50% of your interview time to the 'Action' phase: focus clearly on what YOU personally diagnosed, built, and delivered."
+    ];
+    const coachingSummary = mlData.coaching_summary || mlData.coachingSummary || (
+      "You demonstrated solid foundational domain knowledge and articulated the core technical premise well. " +
+      "To elevate this response into top-tier hire territory, focus on anchoring your narrative with hard metrics " +
+      "and emphasizing your personal architectural ownership throughout the story."
+    );
+    const improvedSTAR = mlData.improved_star || mlData.improvedSTAR || {
+      situation: "In my previous engineering role, our distributed microservices tier experienced severe p99 latency spikes during peak traffic hours.",
+      task: "My objective was to identify the root architectural bottleneck and re-engineer our caching tier to guarantee sub-200ms latency.",
+      action: "I instrumented distributed tracing via OpenTelemetry, pinpointed redundant SQL queries, and implemented a multi-tiered Redis caching layer.",
+      result: "This cut our p99 response times from 2.8s down to 145ms—a 95% latency reduction—while completely eliminating transaction timeouts."
+    };
+
     // Attach media and screening info to returned payload
+    mlData.weaknesses = normalizedWeaknesses;
+    mlData.actionPlan = actionPlan;
+    mlData.action_plan = actionPlan;
+    mlData.coachingSummary = coachingSummary;
+    mlData.coaching_summary = coachingSummary;
+    mlData.improvedSTAR = improvedSTAR;
+    mlData.improved_star = improvedSTAR;
     mlData.mediaType = mediaType;
     mlData.mediaUrl = mediaUrl;
     mlData.candidateName = candidateName;
@@ -216,9 +317,12 @@ const analyzeInterview = async (req, res) => {
       userId,
       transcript: mlData.transcript,
       scores: mlData.scores,
-      weaknesses: mlData.weaknesses,
+      weaknesses: normalizedWeaknesses,
       star: mlData.star,
       improved_answer: mlData.improved_answer,
+      improvedSTAR,
+      actionPlan,
+      coachingSummary,
       follow_up_question: mlData.follow_up_question,
       hiring_score: hiringScore,
       filler_words: mlData.filler_words,

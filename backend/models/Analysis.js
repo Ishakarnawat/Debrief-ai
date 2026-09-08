@@ -6,6 +6,10 @@ const path = require("path");
 const WeaknessSchema = new mongoose.Schema({
   issue: String,
   impact: { type: String, enum: ["high", "medium", "low"] },
+  category: { type: String, default: "Communication" },
+  whyItMatters: { type: String, default: "" },
+  howToFix: { type: String, default: "" },
+  example: { type: String, default: "" },
 });
 
 const ScoresSchema = new mongoose.Schema({
@@ -63,6 +67,14 @@ const AnalysisSchema = new mongoose.Schema(
     weaknesses: [WeaknessSchema],
     star: StarSchema,
     improved_answer: String,
+    improvedSTAR: {
+      situation: { type: String, default: "" },
+      task: { type: String, default: "" },
+      action: { type: String, default: "" },
+      result: { type: String, default: "" },
+    },
+    actionPlan: [String],
+    coachingSummary: { type: String, default: "" },
     follow_up_question: String,
     hiring_score: Number,
     filler_words: { type: Map, of: Number }, // e.g. { "um": 3, "like": 5 }

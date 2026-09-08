@@ -55,6 +55,9 @@ class AnalysisResponse(BaseModel):
     rubric: Optional[dict] = None
     recommendation: Optional[str] = None
     recruiter_summary: Optional[str] = None
+    action_plan: Optional[list] = None
+    coaching_summary: Optional[str] = None
+    improved_star: Optional[dict] = None
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -171,12 +174,34 @@ def ai_evaluate(transcript: str, star: dict, filler_counts: dict, wpm: float) ->
 def _openai_evaluate(transcript: str) -> dict:
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     prompt = f"""
+You are an expert executive tech interviewer and executive communication coach.
 Analyze this interview answer and respond ONLY with valid JSON matching this exact schema:
 {{
   "scores": {{"clarity": <0-10>, "depth": <0-10>, "relevance": <0-10>}},
-  "weaknesses": [{{"issue": "...", "impact": "high|medium|low"}}],
-  "improved_answer": "...",
-  "follow_up_question": "...",
+  "weaknesses": [
+    {{
+      "issue": "<concise title of detected weakness>",
+      "impact": "high|medium|low",
+      "category": "STAR Structure | Delivery & Pace | Impact & Metrics | Ownership",
+      "whyItMatters": "<1-2 sentences explaining the interviewer's perspective and why points were deducted>",
+      "howToFix": "<specific, actionable coaching steps on how the candidate can fix this>",
+      "example": "<concrete example phrase or formula to use instead>"
+    }}
+  ],
+  "improved_star": {{
+    "situation": "<concise sentence setting context and engineering challenge>",
+    "task": "<sentence defining your direct personal responsibility and objective>",
+    "action": "<1-2 sentences detailing specific technical execution, trade-offs, and tools>",
+    "result": "<sentence delivering quantifiable metrics, performance gains, and business value>"
+  }},
+  "improved_answer": "<complete, fluent, highly compelling STAR response combining the 4 parts without any generic bracket placeholders>",
+  "action_plan": [
+    "<actionable drill 1>",
+    "<actionable drill 2>",
+    "<actionable drill 3>"
+  ],
+  "coaching_summary": "<2-3 sentence encouraging, constructive takeaway on their biggest strength and #1 priority to improve>",
+  "follow_up_question": "<strategic follow-up question an interviewer would ask next>",
   "hiring_score": <0-100>
 }}
 
@@ -201,43 +226,129 @@ def _mock_evaluate(transcript: str, star: dict, filler_counts: dict, wpm: float)
     total_fillers = sum(filler_counts.values())
     word_count = len(transcript.split())
     star_count = sum(star.values())
+    lower_tx = transcript.lower()
 
     # ── Scores ─────────────────────────────────────────────────────────────
     clarity = max(4, min(10, 9 - total_fillers * 0.4 + (1 if wpm < 160 else 0)))
     depth   = max(4, min(10, 5 + star_count * 1.2 + (word_count / 100) * 0.3))
     relevance = max(4, min(10, 6 + star_count * 0.8))
 
-    # ── Weaknesses ─────────────────────────────────────────────────────────
+    # ── Actionable Weaknesses with Fix-It Playbook ─────────────────────────
     weaknesses = []
-    if total_fillers > 5:
-        weaknesses.append({"issue": f"Excessive filler words ({total_fillers} detected) reduce clarity and confidence", "impact": "high"})
+    if total_fillers > 4:
+        weaknesses.append({
+            "issue": f"Excessive filler words ({total_fillers} detected) break narrative flow",
+            "impact": "high",
+            "category": "Delivery & Articulation",
+            "whyItMatters": "Frequent vocal fillers ('um', 'like', 'basically') create auditory fatigue and signal uncertainty under pressure.",
+            "howToFix": "Replace fillers with a deliberate 1-second silent pause. A silent breath projects executive poise and buys you time to structure the next thought.",
+            "example": "Instead of: 'So, um, basically we had this problem...', say: 'Our team faced a critical challenge: [pause] our database query latency had tripled under peak traffic.'"
+        })
     if not star["result"]:
-        weaknesses.append({"issue": "Missing quantifiable results — fails to demonstrate measurable impact", "impact": "high"})
+        weaknesses.append({
+            "issue": "Missing quantifiable results — impact is asserted rather than proven",
+            "impact": "high",
+            "category": "Impact & Metrics",
+            "whyItMatters": "Hiring managers evaluate whether your technical contributions directly translated into business value, speedups, or cost savings.",
+            "howToFix": "Always close with the Metric Formula: [Metric Before] → [Engineering Action] → [Metric After with ROI/Percentage].",
+            "example": "Instead of: 'The deployment got much faster', say: 'We cut deployment build time from 4 hours to 24 minutes, saving our 12-person team over 18 engineering hours weekly.'"
+        })
     if not star["action"]:
-        weaknesses.append({"issue": "Insufficient explanation of personal actions and specific contributions", "impact": "medium"})
-    if wpm > 175:
-        weaknesses.append({"issue": f"Speaking pace too fast ({wpm} WPM) — may signal nervousness", "impact": "medium"})
-    if wpm < 100:
-        weaknesses.append({"issue": f"Speaking pace too slow ({wpm} WPM) — risks losing interviewer attention", "impact": "medium"})
-    if word_count < 80:
-        weaknesses.append({"issue": "Answer is too brief — lacks sufficient detail and context", "impact": "high"})
+        weaknesses.append({
+            "issue": "Insufficient explanation of your personal technical contributions",
+            "impact": "medium",
+            "category": "Ownership & Agency",
+            "whyItMatters": "Overusing 'we' obscures your individual ownership, leaving the interviewer unsure if you drove the architecture or just watched.",
+            "howToFix": "Anchor with 'I': Detail the trade-offs YOU personally evaluated, the prototype YOU authored, or the technical consensus YOU drove.",
+            "example": "Instead of: 'We rebuilt the caching layer', say: 'I benchmarked Redis against Memcached, authored the migration RFC, and implemented the TTL invalidation protocol.'"
+        })
+    if wpm > 170:
+        weaknesses.append({
+            "issue": f"Speaking pace too rapid ({wpm:.0f} WPM) — risks overwhelming the listener",
+            "impact": "medium",
+            "category": "Pacing & Delivery",
+            "whyItMatters": "Rapid speech can sound rehearsed or anxious, and prevents interviewers from jotting down your key technical achievements.",
+            "howToFix": "Aim for the 130–150 WPM conversational sweet spot. Insert intentional micro-pauses at commas and after delivering key metrics.",
+            "example": "Take a calm breath between your Situation and Action transitions to let your accomplishments sink in."
+        })
+    elif wpm < 110:
+        weaknesses.append({
+            "issue": f"Speaking pace too slow ({wpm:.0f} WPM) — may signal low energy",
+            "impact": "medium",
+            "category": "Pacing & Delivery",
+            "whyItMatters": "A lethargic cadence can make the interviewer perceive hesitation or lack of excitement about your projects.",
+            "howToFix": "Pick up momentum during the Action phase by speaking with crisp, active verbs (spearheaded, diagnosed, architected).",
+            "example": "Vary your vocal pitch and emphasize key outcome numbers to keep the interviewer engaged."
+        })
+    if word_count < 85:
+        weaknesses.append({
+            "issue": "Answer is too brief — lacks technical depth and situational context",
+            "impact": "high",
+            "category": "Depth & Thoroughness",
+            "whyItMatters": "Very brief answers leave interviewers wondering whether you have genuine hands-on experience solving complex edge cases.",
+            "howToFix": "Expand your response to 90–120 seconds. Dedicate 20s to Situation/Task, 50s to Action, and 30s to Result and Learnings.",
+            "example": "Highlight constraints: mention legacy code, tight deadlines, scale requirements, or high concurrent traffic."
+        })
     if not star["situation"]:
-        weaknesses.append({"issue": "No clear situational context provided at the start", "impact": "low"})
+        weaknesses.append({
+            "issue": "No clear situational context or business stakes provided upfront",
+            "impact": "low",
+            "category": "Storytelling Architecture",
+            "whyItMatters": "Without context, the interviewer cannot appreciate the difficulty or magnitude of the engineering problem.",
+            "howToFix": "Open with the 1-sentence hook: Company context + baseline problem + immediate business risk.",
+            "example": "Start with: 'At my previous company, our checkout pipeline was dropping 15% of transactions during peak traffic surges.'"
+        })
     if not weaknesses:
-        weaknesses.append({"issue": "Consider adding more specific technical details to strengthen credibility", "impact": "low"})
+        weaknesses.append({
+            "issue": "Growth opportunity: Highlight long-term architectural trade-offs and team learnings",
+            "impact": "low",
+            "category": "Seniority & Maturity",
+            "whyItMatters": "Senior and staff engineers are evaluated on how they handle trade-offs and elevate engineering culture.",
+            "howToFix": "Add a 15-second reflective coda on what you would architect differently today with emerging tooling.",
+            "example": "'Reflecting on that project, if architecting it today, I would leverage event-driven Kafka streaming rather than polling.'"
+        })
 
     # ── Hiring score ───────────────────────────────────────────────────────
     avg_score = (clarity + depth + relevance) / 3
     hiring_score = round(avg_score * 10 - total_fillers * 1.5 + star_count * 3, 1)
     hiring_score = max(20, min(95, hiring_score))
 
-    # ── Improved answer ────────────────────────────────────────────────────
-    improved = (
-        "In my previous role, I faced a significant challenge when [specific situation]. "
-        "My responsibility was to [clear task/goal]. To address this, I [concrete actions taken, "
-        "tools used, team coordination]. As a direct result, we achieved [quantifiable outcome "
-        "— e.g., 40% improvement, $X saved, delivered 2 weeks ahead of schedule]. "
-        "This experience reinforced my ability to [relevant skill], which I would bring to this role."
+    # ── Context-Aware Polished STAR Model Answer ───────────────────────────
+    if "deployment" in lower_tx or "pipeline" in lower_tx or "build" in lower_tx or "ci" in lower_tx:
+        improved_star = {
+            "situation": "In my previous engineering role, our deployment pipeline took over 3.5 hours per build, creating severe release bottlenecks and blocking multiple development squads.",
+            "task": "As the release reliability lead, my responsibility was to reduce build times below 30 minutes while maintaining strict 100% test suite verification.",
+            "action": "I profiled the pipeline, isolated the slowest test suites, implemented containerized parallel test runners, and configured Docker BuildKit layer caching.",
+            "result": "As a direct result, deploy times dropped from 210 minutes to just 22 minutes—an 89% speedup—saving our 15-person team over 40 hours of combined idle waiting time each week."
+        }
+    elif "customer" in lower_tx or "drop" in lower_tx or "retention" in lower_tx or "onboard" in lower_tx:
+        improved_star = {
+            "situation": "At my last company, customer funnel analytics revealed a critical 58% drop-off rate in our new user onboarding flow within the first 48 hours.",
+            "task": "I was tasked with diagnosing the friction points and engineering a seamless, progressive onboarding experience to improve 30-day user retention.",
+            "action": "I synthesized user session replays, redesigned our permission authorization flow, and built an asynchronous progressive checklist that provided immediate product value.",
+            "result": "Within 60 days of launch, onboarding completion increased by 42%, setup-related support tickets dropped by 35%, and 30-day active retention climbed from 24% to 39%."
+        }
+    else:
+        improved_star = {
+            "situation": "In my recent project, our distributed backend services were experiencing severe p99 latency spikes of up to 2.8 seconds during peak traffic hours.",
+            "task": "My objective was to diagnose the root architectural bottleneck and re-engineer our data access tier to maintain sub-200ms p99 latency under 5x peak load.",
+            "action": "I instrumented distributed tracing via OpenTelemetry, pinpointed redundant database queries, and implemented a multi-tiered Redis caching layer with proactive cache warming.",
+            "result": "This cut our p99 response times from 2.8s down to 145ms—a 95% latency reduction—while lowering database compute load by 40% and completely eliminating transaction timeouts."
+        }
+
+    improved = f"{improved_star['situation']} {improved_star['task']} {improved_star['action']} {improved_star['result']}"
+
+    # ── Action Plan Drills & Coaching Summary ──────────────────────────────
+    action_plan = [
+        "Anchor your story with the Metric Formula: explicitly state the problem baseline, your action, and the resulting percentage or dollar gain.",
+        "Replace verbal filler words ('um', 'like', 'you know') with a deliberate 1-second pause to project confidence and authority.",
+        "Dedicate 50% of your interview time to the 'Action' phase: focus clearly on what YOU personally diagnosed, built, and delivered."
+    ]
+
+    coaching_summary = (
+        "You demonstrated solid foundational domain knowledge and articulated the core technical premise well. "
+        "To elevate this response into top-tier hire territory, focus on anchoring your narrative with hard metrics "
+        "and emphasizing your personal architectural ownership throughout the story."
     )
 
     # ── Follow-up question ─────────────────────────────────────────────────
@@ -257,7 +368,10 @@ def _mock_evaluate(transcript: str, star: dict, filler_counts: dict, wpm: float)
             "relevance": round(relevance, 1),
         },
         "weaknesses": weaknesses,
+        "improved_star": improved_star,
         "improved_answer": improved,
+        "action_plan": action_plan,
+        "coaching_summary": coaching_summary,
         "follow_up_question": follow_up,
         "hiring_score": hiring_score,
     }
@@ -327,6 +441,9 @@ async def analyze(file: UploadFile = File(...)):
             weaknesses=ai_result["weaknesses"],
             star=star,
             improved_answer=ai_result["improved_answer"],
+            improved_star=ai_result.get("improved_star"),
+            action_plan=ai_result.get("action_plan"),
+            coaching_summary=ai_result.get("coaching_summary"),
             follow_up_question=ai_result["follow_up_question"],
             hiring_score=hiring_score,
             filler_words=filler_counts,

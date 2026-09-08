@@ -14,6 +14,9 @@ import {
   Calendar,
   FileText,
   Code2,
+  Target,
+  Sparkles,
+  BookOpen,
 } from "lucide-react";
 import CompetencyRadarChart from "./CompetencyRadarChart";
 
@@ -563,6 +566,69 @@ export default function PDFScorecardModal({ isOpen, onClose, data }) {
               ))}
             </div>
           </div>
+
+          {/* Actionable Coaching & Weakness Playbook */}
+          {data.weaknesses?.length > 0 && (
+            <div className="border-t border-white/10 pt-6 space-y-3">
+              <div className="flex items-center gap-2">
+                <Target className="text-rose-400" size={16} />
+                <h3 className="text-sm font-semibold text-white">Actionable Coaching & Growth Opportunities</h3>
+              </div>
+              <div className="space-y-2.5">
+                {data.weaknesses.map((w, idx) => (
+                  <div key={idx} className="p-3 rounded-xl bg-surface-800/60 border border-white/5 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-100">{w.issue}</span>
+                      <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20">
+                        {w.category || (w.impact ? `${w.impact} Priority` : "Action Item")}
+                      </span>
+                    </div>
+                    {w.whyItMatters && (
+                      <p className="text-slate-400 text-[11px] leading-relaxed">
+                        <strong className="text-amber-300">Interviewer Impact:</strong> {w.whyItMatters}
+                      </p>
+                    )}
+                    {w.howToFix && (
+                      <p className="text-slate-300 text-[11px] leading-relaxed">
+                        <strong className="text-brand-300">Action Step:</strong> {w.howToFix}
+                      </p>
+                    )}
+                    {w.example && (
+                      <p className="text-emerald-300 text-[11px] font-mono italic leading-relaxed pl-2 border-l border-emerald-500/30">
+                        "{w.example}"
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* AI Benchmark Model STAR Answer */}
+          {(data.improved_star || data.improvedSTAR || data.improved_answer) && (
+            <div className="border-t border-white/10 pt-6 space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="text-brand-400" size={16} />
+                <h3 className="text-sm font-semibold text-white">AI Executive Benchmark Answer (STAR Model)</h3>
+              </div>
+              {data.improved_star || data.improvedSTAR ? (
+                <div className="space-y-2 text-xs">
+                  {Object.entries(data.improved_star || data.improvedSTAR).map(([key, val]) => (
+                    <div key={key} className="p-2.5 rounded-lg bg-surface-800/60 border border-white/5">
+                      <span className="font-bold text-brand-300 uppercase tracking-wider block text-[10px] mb-0.5">
+                        [{key.charAt(0).toUpperCase()}] {key.toUpperCase()}
+                      </span>
+                      <p className="text-slate-300 text-xs leading-relaxed">{val}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-xl bg-surface-800/60 border border-white/5 text-xs text-slate-300 leading-relaxed">
+                  {data.improved_answer}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Speech & Vision Telemetry Metrics */}
           <div className="border-t border-white/10 pt-6 space-y-3">
