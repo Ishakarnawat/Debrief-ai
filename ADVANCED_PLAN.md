@@ -95,40 +95,46 @@ To make it look like a premium, modern SaaS product:
 - **1-Command Docker Compose:** Orchestrates Frontend, Express API, FastAPI ML Service, and MongoDB with healthchecks and volume persistence.
 - **Deployment Template:** Turnkey root `.env.example` file.
 
+### Phase 6: Autonomous Gemini ATS Resume Screening Microservice 🚀 [PLANNED]
+*(Detailed Engineering Blueprint: [RESUME_ATS_SCREENER_PLAN.md](file:///c:/Users/admin/OneDrive/Desktop/Debrief-ai/RESUME_ATS_SCREENER_PLAN.md))*
+- **Dedicated Microservice:** High-concurrency FastAPI service (`resume-service`) leveraging **Google Gemini GenAI** with structured Pydantic JSON schemas.
+- **Polyglot Persistence:** PostgreSQL container + SQLAlchemy schema for structured job requirements, applicant ATS metrics, and scoring audit trails alongside MongoDB.
+- **Multi-Format Ingestion:** High-fidelity PDF/DOCX parsing (`pdfplumber`, `python-docx`) with formatting sanitization and prompt injection defenses.
+- **Rubric Scoring Engine:** Weighted ATS match calculation (Hard Skills 40%, Experience 30%, Education 15%, Clarity 15%) + skill gap analysis and red flag detection.
+- **Autonomous Pipeline Funnel:** Automatically qualifies top-scoring applicants (score $\ge$ 75%) and issues unique tokens directly into Debrief's proctored AI video interview pipeline.
+- **Recruiter Resume Hub:** Modern React UI with interactive SVG match gauges, green/red skill pills, and one-click interview advancement.
+
 ---
 
 ## 🏗️ Updated System Architecture
 
 ```text
-[ Candidate Browser ]
-   ├── WebRTC/Camera (Records Video)
-   ├── Tab-Switch Listener (Proctoring)
-   └── React UI (Interview Room)
-         │
-         ▼
+[ Recruiter UI (React) ]
+    ├── Upload Job Description & Candidate Resumes
+    └── View ATS Rankings & Candidate Video Scorecards
+          │
+          ▼
 [ Node.js/Express API Gateway ]
-   ├── Handles Auth (Clerk)
-   ├── Generates Presigned S3 URLs
-   └── Saves Metadata to MongoDB
-         │
-         ▼
-[ Cloud Storage (AWS S3) ] <--- Video File Stored
-         │
-         ▼
-[ Python/FastAPI ML Service ]
-   ├── FFmpeg (Audio Extraction)
-   ├── Whisper (Speech to Text)
-   ├── MediaPipe/OpenCV (Facial/Eye Analysis)
-   └── LLM (Answer grading, STAR analysis)
-         │
-         ▼
-[ Recruiter Dashboard (React) ]
-   └── Fetches aggregated JSON scores & insights
+    ├── Handles Auth (Clerk)
+    ├── Dispatches to Resume & Interview Microservices
+    └── Saves Metadata to MongoDB & Dispatches Automated Invite Tokens
+          │
+          ├────────────────────────────────────────┐
+          ▼                                        ▼
+[ FastAPI Resume Screener (Port 8001) ]    [ Python/FastAPI ML Service (Port 8000) ]
+    ├── PDF/DOCX Extraction (pdfplumber)       ├── FFmpeg (Audio Extraction)
+    ├── Google Gemini GenAI (Structured)       ├── Whisper (Speech to Text)
+    ├── ATS Scoring & Skill Gap Engine         ├── MediaPipe Gaze & Head Pose Tracking
+    └── PostgreSQL (Relational Audit/Metrics)  └── LLM (STAR Rubric Answer Evaluation)
 ```
 
 ---
 
 ## 💡 Pitching This for Your Final Year Project
-When presenting this to your professors, frame it as a **"B2B AI Hiring Assistant"** rather than just a practice tool. 
-- **The Problem:** Manual initial screening is time-consuming for HR.
-- **The Solution:** An asynchronous, AI-proctored video interview platform that reduces HR workload by 80% and provides unbiased, data-driven candidate rankings.
+When presenting this to your professors and viva examiners, frame it as a **"Full-Cycle Autonomous AI Talent Acquisition Platform"**:
+- **The Problem:** Traditional hiring is fractured. Existing ATS tools use dumb keyword matching, leading to high false-negative rates, and are completely disconnected from the actual interview and proctoring stage.
+- **The Solution:** An end-to-end autonomous pipeline that:
+  1. Screens resumes semantically with **Google Gemini GenAI** (eliminating keyword stuffing).
+  2. Employs **Polyglot Architecture** (PostgreSQL for relational ATS evaluations + MongoDB for video telemetry/transcripts).
+  3. Automatically promotes qualified candidates into a **Proctored AI Video Interview** with real-time MediaPipe anti-cheat and live coding verification.
+  4. Generates a unified, data-driven hiring decision scorecard for HR.

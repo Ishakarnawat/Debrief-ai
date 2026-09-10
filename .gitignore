@@ -10,4 +10,6 @@ venv/
 uploads/
 backend/data/
 *.log
+*.db
+*.sqlite3
 .DS_Store
