@@ -70,3 +70,52 @@ class ATSEvaluationResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# Phase 2: Document Ingestion Schemas
+
+class SanitizationReport(BaseModel):
+    original_length: int
+    clean_length: int
+    invisible_chars_removed: int
+    flagged_injections: List[str] = Field(default_factory=list)
+    is_suspicious: bool = False
+
+
+class ExtractedMetadata(BaseModel):
+    candidate_name: Optional[str] = None
+    candidate_email: Optional[str] = None
+    candidate_phone: Optional[str] = None
+
+
+class DocumentParseResponse(BaseModel):
+    file_name: str
+    file_type: str
+    file_size_bytes: int
+    page_count: int
+    word_count: int
+    char_count: int
+    extracted_metadata: ExtractedMetadata
+    sanitization_report: SanitizationReport
+    extracted_text: str
+
+
+class CandidateUploadResult(BaseModel):
+    candidate_id: int
+    candidate_name: Optional[str] = None
+    candidate_email: Optional[str] = None
+    candidate_phone: Optional[str] = None
+    raw_file_name: str
+    word_count: int
+    status: str = "parsed"
+    sanitization_report: Optional[SanitizationReport] = None
+
+
+class CandidateUploadBatchResponse(BaseModel):
+    job_id: int
+    total_received: int
+    total_succeeded: int
+    total_failed: int
+    candidates: List[CandidateUploadResult] = Field(default_factory=list)
+    errors: List[str] = Field(default_factory=list)
+
