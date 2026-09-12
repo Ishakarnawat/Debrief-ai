@@ -119,3 +119,34 @@ class CandidateUploadBatchResponse(BaseModel):
     candidates: List[CandidateUploadResult] = Field(default_factory=list)
     errors: List[str] = Field(default_factory=list)
 
+
+# Phase 3: ATS Screening Response Schemas
+
+class ScreenSingleResponse(BaseModel):
+    status: str = "success"
+    candidate_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    file_name: str
+    overall_match_score: float
+    rubric_scores: RubricScoresSchema
+    skills_matrix: SkillGapSchema
+    strengths: List[str] = Field(default_factory=list)
+    concerns: List[str] = Field(default_factory=list)
+    actionable_recommendations: List[str] = Field(default_factory=list)
+    hiring_recommendation: str
+    interview_recommendation: str
+    suggested_interview_questions: List[str] = Field(default_factory=list)
+    interview_token: Optional[str] = None
+    evaluation_provider: str = "gemini-2.5-flash"
+    sanitization_report: Optional[SanitizationReport] = None
+
+
+class BatchScreenResponse(BaseModel):
+    job_title: str
+    total_screened: int
+    qualified_count: int
+    results: List[ScreenSingleResponse] = Field(default_factory=list)
+    errors: List[str] = Field(default_factory=list)
+
+
