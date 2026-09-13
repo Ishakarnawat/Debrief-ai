@@ -1,9 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
-import { AppUserButton } from "../context/AuthContext";
+import { AppUserButton, useAppAuth } from "../context/AuthContext";
 import { BarChart2, Upload, LayoutDashboard, Brain, FileText } from "lucide-react";
 
 export default function Navbar() {
   const { pathname } = useLocation();
+  const { user } = useAppAuth();
+  
+  // Example simplistic RBAC: user is admin/recruiter if their email includes 'debrief.ai'
+  const isRecruiter = user?.primaryEmailAddress?.emailAddress?.includes("debrief.ai");
 
   const links = [
     { to: "/upload", label: "Analyze", icon: Upload },
@@ -30,20 +34,19 @@ export default function Navbar() {
 
         {/* Nav links */}
         <nav className="flex items-center gap-1">
-          <Link
-            to="/resume-screener"
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
-              pathname === "/resume-screener"
-                ? "bg-brand-500/20 text-brand-300 border border-brand-500/30"
-                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-            }`}
-          >
-            <FileText size={14} className="text-brand-400" />
-            <span>ATS Screener</span>
-            <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded bg-brand-500/20 text-brand-300">
-              Gemini AI
-            </span>
-          </Link>
+          {isRecruiter && (
+            <Link
+              to="/resume-screener"
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                pathname === "/resume-screener"
+                  ? "bg-brand-500/20 text-brand-300 border border-brand-500/30"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              }`}
+            >
+              <FileText size={14} className="text-brand-400" />
+              <span>ATS Screener</span>
+            </Link>
+          )}
 
           <Link
             to="/live-interview"
@@ -55,9 +58,6 @@ export default function Navbar() {
           >
             <Brain size={14} className="text-violet-400" />
             <span>Live AI Room</span>
-            <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded bg-violet-500/20 text-violet-300 animate-pulse">
-              AI Live
-            </span>
           </Link>
 
           <Link
@@ -84,20 +84,22 @@ export default function Navbar() {
             <span>My Assessments</span>
           </Link>
 
-          <Link
-            to="/recruiter"
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
-              pathname === "/recruiter"
-                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-            }`}
-          >
-            <BarChart2 size={14} className={pathname === "/recruiter" ? "text-emerald-400" : ""} />
-            <span>Recruiter Portal</span>
-            <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">
-              Pro
-            </span>
-          </Link>
+          {isRecruiter && (
+            <Link
+              to="/recruiter"
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                pathname === "/recruiter"
+                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              }`}
+            >
+              <BarChart2 size={14} className={pathname === "/recruiter" ? "text-emerald-400" : ""} />
+              <span>Recruiter Portal</span>
+              <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">
+                Pro
+              </span>
+            </Link>
+          )}
         </nav>
 
         {/* User */}

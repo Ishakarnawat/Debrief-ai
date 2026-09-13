@@ -155,20 +155,7 @@ export default function VisionMeshOverlay({
     ctx.strokeStyle = "rgba(148, 163, 184, 0.35)";
     drawPath(ctx, landmarks, JAW_INDICES, w, h);
 
-    // 3. Draw Iris Focus Reticle
-    if (landmarks[468] && landmarks[473]) {
-      const leftIris = landmarks[468];
-      const rightIris = landmarks[473];
-
-      ctx.fillStyle = gaze.isCentered ? "rgba(52, 211, 153, 0.9)" : "rgba(251, 191, 36, 0.9)";
-      ctx.beginPath();
-      ctx.arc(leftIris.x * w, leftIris.y * h, 3, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(rightIris.x * w, rightIris.y * h, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    // 3. Draw Iris Focus Reticle (Removed as requested)
 
     // 4. Draw Center Gaze Crosshair on Nose Tip
     if (landmarks[1]) {

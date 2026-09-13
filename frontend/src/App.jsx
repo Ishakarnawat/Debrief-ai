@@ -25,6 +25,13 @@ function PageLoader() {
   );
 }
 
+function RecruiterRoute({ children }) {
+  const { user } = useAppAuth();
+  const isRecruiter = user?.primaryEmailAddress?.emailAddress?.includes("debrief.ai");
+  if (!isRecruiter) return <Navigate to="/upload" replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -52,13 +59,13 @@ export default function App() {
                 <Navbar />
                 <main className="flex-1">
                   <Routes>
-                    <Route path="/" element={<Navigate to="/resume-screener" replace />} />
-                    <Route path="/resume-screener" element={<ResumeScreenerPage />} />
+                    <Route path="/" element={<Navigate to="/upload" replace />} />
+                    <Route path="/resume-screener" element={<RecruiterRoute><ResumeScreenerPage /></RecruiterRoute>} />
                     <Route path="/live-interview" element={<LiveInterviewPage />} />
                     <Route path="/upload" element={<UploadPage />} />
                     <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/recruiter" element={<RecruiterDashboard />} />
-                    <Route path="*" element={<Navigate to="/resume-screener" replace />} />
+                    <Route path="/recruiter" element={<RecruiterRoute><RecruiterDashboard /></RecruiterRoute>} />
+                    <Route path="*" element={<Navigate to="/upload" replace />} />
                   </Routes>
                 </main>
               </div>

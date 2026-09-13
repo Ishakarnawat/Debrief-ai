@@ -111,9 +111,9 @@ export default function AuthPage() {
             <div className="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-400 mx-auto flex items-center justify-center">
               <Sparkles size={24} />
             </div>
-            <h2 className="font-display font-bold text-xl text-white">Welcome to Debrief.ai</h2>
+            <h2 className="font-display font-bold text-xl text-white">Register / Sign In</h2>
             <p className="text-slate-400 text-sm">
-              Ready to test interview audio analysis with AI feedback.
+              Register below to experience AI interview coaching. Debrief.ai helps you master interviews and understand how ATS (Applicant Tracking Systems) analyze and score candidates behind the scenes.
             </p>
           </div>
 

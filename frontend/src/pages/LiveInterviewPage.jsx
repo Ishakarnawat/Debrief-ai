@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAppAuth } from "../context/AuthContext";
 import {
   Video,
   Mic,
@@ -37,7 +38,8 @@ export default function LiveInterviewPage() {
   const navigate = useNavigate();
 
   // Candidate Details
-  const [candidateName, setCandidateName] = useState("Arjun Sharma");
+  const { user } = useAppAuth();
+  const [candidateName, setCandidateName] = useState(user?.fullName || "Guest Candidate");
   const [targetRole, setTargetRole] = useState("Full Stack Software Engineer");
   const [isPrivate, setIsPrivate] = useState(false);
 
@@ -163,13 +165,18 @@ export default function LiveInterviewPage() {
     [ttsEnabled]
   );
 
-  // Speak initial question on mount
+  const hasSpokenIntroRef = useRef(false);
+
+  // Speak initial question on mount exactly once
   useEffect(() => {
+    if (hasSpokenIntroRef.current) return;
+    hasSpokenIntroRef.current = true;
+    
     const timer = setTimeout(() => {
-      speakText(currentQuestion);
+      speakText("Welcome to your AI-guided live interview! To get started, please introduce yourself, your engineering focus, and a project you are most proud of.");
     }, 600);
     return () => clearTimeout(timer);
-  }, []);
+  }, [speakText]);
 
   // ─── Web Speech Recognition ──────────────────────────────────────────────────
   useEffect(() => {
