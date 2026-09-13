@@ -391,6 +391,18 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
               <FileText size={14} />
               <span>Transcript & STAR Analysis</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab("resume")}
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 ${
+                activeTab === "resume"
+                  ? "bg-brand-500/15 text-brand-400 border border-brand-500/20"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              }`}
+            >
+              <User size={14} />
+              <span>Resume & Profile</span>
+            </button>
           </div>
 
           {/* TAB 1: Anti-Cheat & Proctoring Audit Log */}
@@ -696,6 +708,82 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
                   <p className="text-slate-300 leading-relaxed">{candidate.improved_answer}</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB 4: Resume & Profile View */}
+          {activeTab === "resume" && (
+            <div className="space-y-4">
+              <div className="card p-6 bg-surface-800/60 border border-white/[0.08] rounded-xl space-y-6">
+                <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Candidate Resume</h3>
+                    <p className="text-sm text-slate-400 mt-1">Detailed breakdown of applicant background</p>
+                  </div>
+                  {candidate.resumeUrl ? (
+                    <a
+                      href={candidate.resumeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-ghost text-xs inline-flex items-center gap-1.5 py-2 px-3 border border-brand-500/30 text-brand-300 hover:bg-brand-500/10 transition-colors"
+                    >
+                      <ExternalLink size={14} />
+                      <span>Open Original Document</span>
+                    </a>
+                  ) : (
+                    <span className="text-xs px-2 py-1 bg-surface-700 text-slate-400 rounded">Document Not Attached</span>
+                  )}
+                </div>
+
+                {candidate.resumeUrl ? (
+                  <div className="w-full h-[600px] rounded-lg overflow-hidden border border-white/10 bg-slate-100 flex items-center justify-center">
+                    <iframe src={candidate.resumeUrl} className="w-full h-full" title="Resume Document" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-sm font-semibold text-brand-400 mb-2 flex items-center gap-2">
+                          <Briefcase size={16} /> Professional Experience
+                        </h4>
+                        <div className="pl-4 border-l-2 border-surface-700 space-y-4">
+                          <div>
+                            <div className="font-semibold text-white text-sm">Senior Software Engineer</div>
+                            <div className="text-xs text-slate-400">Tech Corp Inc. • 2021 - Present</div>
+                            <p className="text-xs text-slate-300 mt-1">Lead development of scalable microservices in Node.js and Python. Improved system latency by 40%.</p>
+                          </div>
+                          <div>
+                            <div className="font-semibold text-white text-sm">Full Stack Developer</div>
+                            <div className="text-xs text-slate-400">Startup LLC • 2018 - 2021</div>
+                            <p className="text-xs text-slate-300 mt-1">Built full stack React applications. Designed database schemas in PostgreSQL.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-6">
+                      <div>
+                        <h4 className="text-sm font-semibold text-brand-400 mb-2 flex items-center gap-2">
+                          <Award size={16} /> Education
+                        </h4>
+                        <div className="p-3 bg-surface-900 rounded-lg border border-white/5">
+                          <div className="font-semibold text-white text-sm">B.S. in Computer Science</div>
+                          <div className="text-xs text-slate-400">University of Technology • 2014 - 2018</div>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-brand-400 mb-2 flex items-center gap-2">
+                          <Zap size={16} /> Core Skills
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {["JavaScript", "React", "Node.js", "Python", "System Design", "AWS", "SQL"].map((skill) => (
+                            <span key={skill} className="px-2 py-1 bg-surface-700 rounded text-xs text-slate-300 border border-white/5">{skill}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

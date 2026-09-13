@@ -197,16 +197,16 @@ export default function RecruiterDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20">
-              Recruiter Screening Portal
+            <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 shadow-[0_0_12px_rgba(79,110,247,0.4)]">
+              Dedicated Recruiter Portal
             </span>
             <span className="text-xs text-slate-400">• Anti-Cheat & Proctoring Hub</span>
           </div>
           <h1 className="font-display font-bold text-3xl text-white tracking-tight">
-            Candidate Pipeline
+            Candidate Pipeline & Review
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Review interviews, anti-cheat logs, and rank applicants.
+          <p className="text-slate-400 text-sm mt-1 max-w-lg">
+            Review interview videos, analyze automated AI scores, and view candidate resumes all in one place. Click on any candidate to open their detailed profile.
           </p>
         </div>
 

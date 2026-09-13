@@ -21,20 +21,23 @@ export default function AuthPage() {
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-brand-600/10 blur-[120px]" />
       </div>
 
-      {/* Logo */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center shadow-[0_0_24px_rgba(79,110,247,0.6)]">
-          <BarChart2 size={20} className="text-white" />
+      {/* Premium Logo & Description */}
+      <div className="flex flex-col items-center mb-10 text-center relative z-10">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center shadow-[0_0_40px_rgba(79,110,247,0.8)] mb-6 animate-pulse-slow">
+          <BarChart2 size={32} className="text-white" />
         </div>
-        <span className="font-display font-bold text-2xl">
-          Debrief<span className="text-brand-400">.ai</span>
-        </span>
+        <h1 className="font-display font-extrabold text-6xl md:text-7xl tracking-tight mb-4 drop-shadow-2xl">
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+            Debrief
+          </span>
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-400 to-indigo-500">
+            .ai
+          </span>
+        </h1>
+        <p className="text-slate-300 text-lg md:text-xl max-w-xl leading-relaxed font-light mt-2 drop-shadow-md">
+          The ultimate AI-powered candidate screening platform. Register to experience automated interviews, rigorous anti-cheat proctoring, and comprehensive ATS scoring.
+        </p>
       </div>
-
-      {/* Tagline */}
-      <p className="text-slate-400 text-sm mb-8 text-center max-w-xs">
-        Upload your interview audio. Get AI-powered coaching in seconds.
-      </p>
 
       {isClerkConfigured ? (
         <>
@@ -111,9 +114,9 @@ export default function AuthPage() {
             <div className="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-400 mx-auto flex items-center justify-center">
               <Sparkles size={24} />
             </div>
-            <h2 className="font-display font-bold text-xl text-white">Register / Sign In</h2>
+            <h2 className="font-display font-bold text-xl text-white">Create Your Account</h2>
             <p className="text-slate-400 text-sm">
-              Register below to experience AI interview coaching. Debrief.ai helps you master interviews and understand how ATS (Applicant Tracking Systems) analyze and score candidates behind the scenes.
+              Log in or register to join the platform. Candidates can take AI interviews and recruiters can manage their talent pipelines through our dedicated portal.
             </p>
           </div>
 
