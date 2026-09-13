@@ -37,7 +37,7 @@ export default function LiveInterviewPage() {
   const navigate = useNavigate();
 
   // Candidate Details
-  const [candidateName, setCandidateName] = useState("Alex Morgan");
+  const [candidateName, setCandidateName] = useState("Arjun Sharma");
   const [targetRole, setTargetRole] = useState("Full Stack Software Engineer");
   const [isPrivate, setIsPrivate] = useState(false);
 
@@ -620,7 +620,7 @@ export default function LiveInterviewPage() {
               <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
                 <CheckCircle2 size={32} />
               </div>
-              <h2 className="font-display font-bold text-2xl text-white">Interview Assessment Completed!</h2>
+              <h2 className="font-display font-bold text-2xl text-white">Interview Complete!</h2>
               <p className="text-slate-300 text-sm max-w-md">
                 All 5 milestones (Introduction, Technical System Architecture, Live Algorithmic Coding, and STAR Behavioral Scenarios) have been compiled and analyzed by the Debrief.ai engine.
               </p>

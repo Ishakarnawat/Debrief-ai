@@ -29,13 +29,13 @@ function DemoAuthProvider({ children }) {
   const value = {
     isLoaded: true,
     isSignedIn,
-    userId: "demo_user",
+    userId: "user_debrief",
     user: {
-      id: "demo_user",
-      firstName: "Demo",
-      lastName: "Candidate",
-      fullName: "Demo Candidate",
-      primaryEmailAddress: { emailAddress: "candidate@debrief.ai" },
+      id: "user_debrief",
+      firstName: "Ishaan",
+      lastName: "Arnawat",
+      fullName: "Ishaan Arnawat",
+      primaryEmailAddress: { emailAddress: "ishaan@debrief.ai" },
       imageUrl: null,
     },
     getToken: async () => "demo_mock_jwt_token",
@@ -79,10 +79,10 @@ export function AppUserButton() {
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-700 border border-white/10 text-xs font-display">
       <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center text-white font-bold text-[10px]">
-        DC
+        IA
       </div>
-      <span className="text-slate-300 font-medium hidden sm:inline">Demo Candidate</span>
-      <span className="bg-brand-500/20 text-brand-400 px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold">Demo</span>
+      <span className="text-slate-300 font-medium hidden sm:inline">Ishaan Arnawat</span>
+      <span className="bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold">Pro</span>
     </div>
   );
 }

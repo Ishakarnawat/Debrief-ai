@@ -5,12 +5,14 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const mongoose = require("mongoose");
+const { createProxyMiddleware } = require("http-proxy-middleware");
 const analyzeRoutes = require("./routes/analyze");
 const historyRoutes = require("./routes/history");
 const mediaRoutes = require("./routes/media");
 const { recruiterRouter, publicInvitationHandler } = require("./routes/recruiter");
 const webhookRoutes = require("./routes/webhook");
 const liveInterviewRoutes = require("./routes/liveInterview");
+const atsRoutes = require("./routes/ats");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -26,7 +28,25 @@ app.use("/api/media", mediaRoutes);
 app.use("/api/recruiter", recruiterRouter);
 app.use("/api/recruiter/webhooks", webhookRoutes);
 app.use("/api/live-interview", liveInterviewRoutes);
+app.use("/api/recruiter/ats", atsRoutes);
 app.get("/api/invitations/:token", publicInvitationHandler);
+
+// ─── Proxy: /api/v1/* → FastAPI Resume Screener (port 8001) ──────────────────
+const RESUME_SERVICE_URL = process.env.RESUME_SERVICE_URL || "http://localhost:8001";
+app.use(
+  "/api/v1",
+  createProxyMiddleware({
+    target: RESUME_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: { "^/api/v1": "/api/v1" },
+    on: {
+      error: (err, req, res) => {
+        console.error("[ATS Proxy Error]", err.message);
+        res.status(502).json({ error: "ATS microservice unavailable", detail: err.message });
+      },
+    },
+  })
+);
 
 // Health check
 app.get("/health", (req, res) => {

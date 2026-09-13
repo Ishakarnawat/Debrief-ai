@@ -168,8 +168,8 @@ export default function Dashboard() {
       <div className="max-w-5xl mx-auto px-6 py-10 space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-display font-bold text-3xl text-white mb-1">Assessment Records</h1>
-            <p className="text-slate-400 text-sm">Review past interview recordings, candidate scores, and AI debriefs.</p>
+            <h1 className="font-display font-bold text-3xl text-white mb-1">History</h1>
+            <p className="text-slate-400 text-sm">Past interviews, scores, and AI debriefs.</p>
           </div>
           <button
             onClick={() => navigate("/upload")}

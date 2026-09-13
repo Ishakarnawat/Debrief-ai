@@ -249,10 +249,10 @@ export default function UploadPage() {
           </span>
         </div>
         <h1 className="font-display font-bold text-4xl text-white tracking-tight">
-          Candidate Interview Assessment
+          Record Your Interview
         </h1>
         <p className="text-slate-400 text-sm sm:text-base max-w-xl mx-auto">
-          Record your video interview session with live camera analytics, or upload a recorded response for instant STAR scoring and hiring readiness evaluation.
+          Record a live session or upload a response for instant STAR scoring and AI debrief.
         </p>
       </div>
 

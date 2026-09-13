@@ -289,10 +289,10 @@ export default function ResumeScreenerPage() {
               <div>
                 <div className="flex items-center gap-2.5">
                   <h1 className="text-2xl font-display font-bold tracking-tight text-white">
-                    Autonomous Gemini ATS Screener
+                    ATS Screener
                   </h1>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                    <Sparkles size={12} /> Phase 3 Live
+                    <Sparkles size={12} /> Gemini AI
                   </span>
                 </div>
                 <p className="text-xs text-slate-400">

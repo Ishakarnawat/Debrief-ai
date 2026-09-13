@@ -203,10 +203,10 @@ export default function RecruiterDashboard() {
             <span className="text-xs text-slate-400">• Anti-Cheat & Proctoring Hub</span>
           </div>
           <h1 className="font-display font-bold text-3xl text-white tracking-tight">
-            Candidate Pipeline & Screening
+            Candidate Pipeline
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Evaluate asynchronous video interviews, review anti-cheat audit logs, and rank applicants objectively.
+            Review interviews, anti-cheat logs, and rank applicants.
           </p>
         </div>
 
