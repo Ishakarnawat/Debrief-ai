@@ -35,7 +35,7 @@ function DemoAuthProvider({ children }) {
       firstName: "Ishaan",
       lastName: "Arnawat",
       fullName: "Ishaan Arnawat",
-      primaryEmailAddress: { emailAddress: "ishaan@gmail.com" },
+      primaryEmailAddress: { emailAddress: "ishaan@debrief.ai" },
       imageUrl: null,
     },
     getToken: async () => "demo_mock_jwt_token",

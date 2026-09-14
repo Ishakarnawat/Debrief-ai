@@ -61,6 +61,7 @@ export default function App() {
                   <Routes>
                     <Route path="/" element={<Navigate to="/upload" replace />} />
                     <Route path="/resume-screener" element={<RecruiterRoute><ResumeScreenerPage /></RecruiterRoute>} />
+                    <Route path="/recruiter/resume-screener" element={<RecruiterRoute><ResumeScreenerPage /></RecruiterRoute>} />
                     <Route path="/live-interview" element={<LiveInterviewPage />} />
                     <Route path="/upload" element={<UploadPage />} />
                     <Route path="/dashboard" element={<Dashboard />} />
