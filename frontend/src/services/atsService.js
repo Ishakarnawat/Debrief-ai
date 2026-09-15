@@ -182,3 +182,34 @@ export async function parseDocumentPreview(file) {
   });
   return res.data;
 }
+
+// ── Phase 6: Benchmarks & Evaluations ─────────────────────────────────────────
+
+/**
+ * Retrieves the latest cached ATS benchmark telemetry report.
+ */
+export async function fetchAtsBenchmarks(getToken) {
+  const headers = await getHeaders(getToken);
+  try {
+    const res = await axios.get("/api/recruiter/ats/benchmarks", { headers });
+    return res.data;
+  } catch {
+    const fallback = await axios.get("/api/v1/benchmarks/latest");
+    return fallback.data;
+  }
+}
+
+/**
+ * Triggers an on-demand latency, classification, and security stress-test.
+ */
+export async function runAtsBenchmarks(getToken) {
+  const headers = await getHeaders(getToken);
+  try {
+    const res = await axios.post("/api/recruiter/ats/benchmarks/run", {}, { headers });
+    return res.data;
+  } catch {
+    const fallback = await axios.post("/api/v1/benchmarks/run");
+    return fallback.data;
+  }
+}
+

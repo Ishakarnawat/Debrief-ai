@@ -29,6 +29,7 @@ import {
   ArrowUpDown,
   Download,
   FolderPlus,
+  Gauge,
 } from "lucide-react";
 import { useAppAuth } from "../context/AuthContext";
 import {
@@ -42,6 +43,7 @@ import {
 import SideBySideViewerModal from "../components/SideBySideViewerModal";
 import RedFlagDrawer from "../components/RedFlagDrawer";
 import ATSLeaderboardTable from "../components/ATSLeaderboardTable";
+import VivaBenchmarkModal from "../components/VivaBenchmarkModal";
 
 // ─── Preset Job Descriptions for Quick Testing ──────────────────────────────
 const PRESET_JOBS = [
@@ -220,6 +222,7 @@ export default function ResumeScreenerPage() {
   // Modal / Drawer Active States
   const [sideBySideCandidate, setSideBySideCandidate] = useState(null);
   const [redFlagCandidate, setRedFlagCandidate] = useState(null);
+  const [isBenchmarkModalOpen, setIsBenchmarkModalOpen] = useState(false);
 
   // On mount: check health and fetch saved jobs
   useEffect(() => {
@@ -495,6 +498,14 @@ export default function ResumeScreenerPage() {
 
           {/* Microservice Badges & Tab Navigation */}
           <div className="flex flex-wrap items-center gap-3 z-10">
+            <button
+              onClick={() => setIsBenchmarkModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-xs font-semibold text-purple-300 transition-all shadow-sm hover:scale-[1.02]"
+            >
+              <Gauge size={14} className="text-purple-400" />
+              <span>Viva &amp; Benchmark Lab</span>
+            </button>
+
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-slate-300">
               <Cpu size={14} className={serviceStatus === "healthy" ? "text-emerald-400" : "text-amber-400"} />
               <span>FastAPI :8001 ({serviceStatus})</span>
@@ -1343,6 +1354,13 @@ export default function ResumeScreenerPage() {
           onPromoteToInterview={() => handlePromoteCandidate(redFlagCandidate)}
         />
       )}
+
+      {/* ── Phase 6: Academic Viva & Benchmark Modal ──────────────────── */}
+      <VivaBenchmarkModal
+        isOpen={isBenchmarkModalOpen}
+        onClose={() => setIsBenchmarkModalOpen(false)}
+        getToken={getToken}
+      />
     </div>
   );
 }

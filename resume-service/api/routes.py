@@ -22,8 +22,10 @@ from models.schemas import (
     CandidateUploadResult,
     CandidateUploadBatchResponse,
     ScreenSingleResponse,
-    BatchScreenResponse
+    BatchScreenResponse,
+    BenchmarkReportResponse
 )
+from services.benchmark_runner import ATSBenchmarkRunner
 
 router = APIRouter()
 
@@ -492,5 +494,22 @@ def screen_job_candidate(
         status=evaluation.status,
         created_at=evaluation.created_at
     )
+
+
+# ─── Phase 6: Benchmark & Academic Evaluation Endpoints ────────────────────
+
+@router.get("/benchmarks/latest", response_model=BenchmarkReportResponse, tags=["Evaluation & Benchmarks"])
+def get_latest_benchmark_report():
+    """Retrieves the latest cached latency and classification benchmark report."""
+    return ATSBenchmarkRunner.get_latest_report()
+
+
+@router.post("/benchmarks/run", response_model=BenchmarkReportResponse, tags=["Evaluation & Benchmarks"])
+def run_live_benchmark_suite():
+    """
+    Executes an on-demand latency, classification accuracy, and security stress-test
+    across the multi-domain ground truth candidate dataset.
+    """
+    return ATSBenchmarkRunner.run_benchmark_suite()
 
 

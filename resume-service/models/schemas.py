@@ -150,3 +150,60 @@ class BatchScreenResponse(BaseModel):
     errors: List[str] = Field(default_factory=list)
 
 
+# Phase 6: Benchmark & Evaluation Schemas
+
+class LatencyMetrics(BaseModel):
+    p50_seconds: float
+    p95_seconds: float
+    p99_seconds: float
+    mean_seconds: float
+    min_seconds: float
+    max_seconds: float
+    resumes_per_second: float
+
+
+class ConfusionMatrix(BaseModel):
+    true_positives: int
+    false_positives: int
+    true_negatives: int
+    false_negatives: int
+
+
+class ClassificationMetrics(BaseModel):
+    accuracy: float
+    precision: float
+    recall: float
+    f1_score: float
+    confusion_matrix: ConfusionMatrix
+    qualification_threshold: float = 75.0
+
+
+class SecurityBenchmark(BaseModel):
+    injection_attempts_tested: int
+    injections_neutralized: int
+    defense_success_rate: float
+    zero_width_detection_rate: float
+
+
+class CandidateEvaluationSample(BaseModel):
+    candidate_name: str
+    category: str
+    expected_qualification: bool
+    actual_score: float
+    hiring_recommendation: str
+    latency_seconds: float
+    passed_threshold: bool
+
+
+class BenchmarkReportResponse(BaseModel):
+    status: str = "success"
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    dataset_size: int
+    model_name: str
+    latency_metrics: LatencyMetrics
+    classification_metrics: ClassificationMetrics
+    security_benchmark: SecurityBenchmark
+    detailed_samples: List[CandidateEvaluationSample] = Field(default_factory=list)
+
+
+

@@ -152,6 +152,24 @@ async function healthCheck() {
   return response.data;
 }
 
+// ── Phase 6: Benchmarks & Evaluations ─────────────────────────────────────────
+
+/**
+ * Retrieve latest benchmark telemetry report from the ATS microservice.
+ */
+async function getLatestBenchmarks() {
+  const response = await resumeServiceAxios.get("/benchmarks/latest");
+  return response.data;
+}
+
+/**
+ * Execute an on-demand latency, classification, and security stress-test.
+ */
+async function runBenchmarks() {
+  const response = await resumeServiceAxios.post("/benchmarks/run");
+  return response.data;
+}
+
 module.exports = {
   createJob,
   listJobs,
@@ -162,4 +180,7 @@ module.exports = {
   getJobRankings,
   screenJobCandidate,
   healthCheck,
+  getLatestBenchmarks,
+  runBenchmarks,
 };
+

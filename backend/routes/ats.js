@@ -139,4 +139,25 @@ router.post(
   }
 );
 
+// ── Phase 6: Benchmarks & Evaluations ─────────────────────────────────────────
+
+/**
+ * GET /api/recruiter/ats/benchmarks
+ * Retrieve latest latency, classification, and security benchmark report.
+ */
+router.get("/benchmarks", requireAuth, async (req, res) => {
+  const data = await resumeClient.getLatestBenchmarks();
+  res.json(data);
+});
+
+/**
+ * POST /api/recruiter/ats/benchmarks/run
+ * Trigger an on-demand latency, classification, and security stress-test.
+ */
+router.post("/benchmarks/run", requireAuth, async (req, res) => {
+  const data = await resumeClient.runBenchmarks();
+  res.json(data);
+});
+
 module.exports = router;
+
