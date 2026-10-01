@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAppAuth } from "../context/AuthContext";
 import {
   Video,
@@ -19,6 +19,10 @@ import {
   ChevronRight,
   Eye,
   Lock,
+  Target,
+  Layers,
+  ArrowUpRight,
+  Check,
 } from "lucide-react";
 import LiveCodingEditor from "../components/LiveCodingEditor";
 import PDFScorecardModal from "../components/PDFScorecardModal";
@@ -39,9 +43,20 @@ export default function LiveInterviewPage() {
 
   // Candidate Details
   const { user } = useAppAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tokenParam = searchParams.get("token");
+  const profileParam = searchParams.get("profile");
+
   const [candidateName, setCandidateName] = useState(user?.fullName || "Guest Candidate");
   const [targetRole, setTargetRole] = useState("Full Stack Software Engineer");
   const [isPrivate, setIsPrivate] = useState(false);
+
+  // Adaptive ATS State
+  const [atsProfile, setAtsProfile] = useState(null);
+  const [adaptiveActive, setAdaptiveActive] = useState(true);
+  const [currentGapProbed, setCurrentGapProbed] = useState(null);
+  const [loadingContext, setLoadingContext] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState(profileParam || "alex_mercer");
 
   // Stage & State
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
@@ -59,6 +74,47 @@ export default function LiveInterviewPage() {
       timestamp: new Date().toISOString(),
     },
   ]);
+
+  // ─── Fetch Adaptive ATS Context ──────────────────────────────────────────────
+  const loadAtsContext = useCallback(async (tokenOrPreset) => {
+    try {
+      setLoadingContext(true);
+      const url =
+        tokenOrPreset && (tokenOrPreset.startsWith("dbrf_") || tokenOrPreset.startsWith("inv_") || tokenOrPreset.startsWith("ats_"))
+          ? `${API_URL}/api/live-interview/session-context?token=${encodeURIComponent(tokenOrPreset)}`
+          : `${API_URL}/api/live-interview/session-context?profile=${encodeURIComponent(tokenOrPreset || "alex_mercer")}`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success && data.atsProfile) {
+        setAtsProfile(data.atsProfile);
+        setCandidateName(data.atsProfile.candidateName);
+        setTargetRole(data.atsProfile.targetRole);
+        setCurrentGapProbed(data.targetGaps?.[0] || null);
+
+        if (data.initialQuestion) {
+          setCurrentQuestion(data.initialQuestion);
+          setConversationHistory([
+            {
+              role: "ai",
+              text: data.initialQuestion,
+              stage: "intro",
+              timestamp: new Date().toISOString(),
+            },
+          ]);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load ATS context:", e);
+    } finally {
+      setLoadingContext(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAtsContext(tokenParam || selectedPreset);
+  }, [tokenParam, selectedPreset, loadAtsContext]);
+
 
   // Coding Challenge Results
   const [codeEvaluation, setCodeEvaluation] = useState(null);
@@ -260,6 +316,7 @@ export default function LiveInterviewPage() {
           targetRole,
           questionIndex: currentStageIndex,
           conversationHistory: updatedHistory,
+          atsProfile,
         }),
       });
 
@@ -273,6 +330,9 @@ export default function LiveInterviewPage() {
         setCurrentStageIndex(nextIdx);
         setCurrentQuestion(resData.nextQuestion);
         setAiFeedback(resData.aiFeedback);
+        if (resData.gapProbed) {
+          setCurrentGapProbed(resData.gapProbed);
+        }
 
         const aiTurn = {
           role: "ai",
@@ -308,10 +368,11 @@ export default function LiveInterviewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           candidateName,
-          candidateEmail: "alex.morgan@stanford.alumni.edu",
+          candidateEmail: atsProfile?.candidateEmail || "alex.morgan@stanford.alumni.edu",
           targetRole,
           conversationHistory: historyToSave || conversationHistory,
           codeEvaluation,
+          atsProfile,
           proctoringData: {
             integrityScore: Math.max(
               70,
@@ -398,6 +459,79 @@ export default function LiveInterviewPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Adaptive AI Interview Telemetry Banner (Phase 8) ─────────────── */}
+      <div className="bg-gradient-to-r from-brand-950/60 via-surface-900 to-indigo-950/50 border-b border-brand-500/20 px-6 py-2.5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30 text-xs font-semibold">
+              <Target size={14} className="animate-spin text-brand-400" style={{ animationDuration: "6s" }} />
+              <span>Adaptive ATS Mode Active</span>
+            </div>
+
+            {currentGapProbed ? (
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-slate-400">Target Gap Under Scrutiny:</span>
+                <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono font-medium flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
+                  {currentGapProbed}
+                </span>
+              </div>
+            ) : (
+              <div className="text-xs text-slate-400">
+                AI dynamically adjusting questioning based on resume analysis
+              </div>
+            )}
+
+            {atsProfile?.matchedSkills?.length > 0 && (
+              <div className="hidden lg:flex items-center gap-1 text-[11px] text-slate-400">
+                <span>Verified:</span>
+                <span className="text-emerald-400 font-mono">
+                  {atsProfile.matchedSkills.slice(0, 3).join(", ")}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Profile Switcher for Testing / Demonstration */}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-slate-400 hidden sm:inline">Demo Candidate:</span>
+            <div className="inline-flex rounded-lg bg-surface-800/80 p-0.5 border border-white/[0.08]">
+              <button
+                onClick={() => {
+                  setSelectedPreset("alex_mercer");
+                  loadAtsContext("alex_mercer");
+                }}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                  selectedPreset === "alex_mercer"
+                    ? "bg-brand-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Alex Mercer (Backend)
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedPreset("sarah_chen");
+                  loadAtsContext("sarah_chen");
+                }}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                  selectedPreset === "sarah_chen"
+                    ? "bg-brand-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Sarah Chen (Fullstack)
+              </button>
+            </div>
+            {atsProfile?.overallScore && (
+              <div className="px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                ATS: {atsProfile.overallScore}%
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -636,12 +770,57 @@ export default function LiveInterviewPage() {
                 <div className="p-4 rounded-xl bg-surface-800/80 border border-white/5 w-full max-w-sm flex items-center justify-around">
                   <div>
                     <div className="text-2xl font-bold font-display text-white">{assessmentResult.hiring_score}%</div>
-                    <div className="text-xs text-slate-400">Hiring Score</div>
+                    <div className="text-xs text-slate-400">Holistic Score</div>
                   </div>
                   <div className="h-8 w-[1px] bg-white/10" />
                   <div>
                     <div className="text-sm font-bold text-emerald-400">{assessmentResult.recommendation}</div>
                     <div className="text-xs text-slate-400">AI Recommendation</div>
+                  </div>
+                </div>
+              )}
+
+              {/* ATS Skill Gap Remediation Card (Phase 8) */}
+              {assessmentResult?.atsContext && (
+                <div className="w-full max-w-md p-4 rounded-xl bg-gradient-to-br from-surface-800 to-surface-850 border border-brand-500/20 text-left space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-brand-300 flex items-center gap-1.5">
+                      <Target size={14} className="text-brand-400" />
+                      ATS Skill Gap Remediation
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 border border-brand-500/30 text-xs font-mono font-bold">
+                      {assessmentResult.atsContext.skillGapRemediationScore}% Verified
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {assessmentResult.atsContext.remediationBreakdown?.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2 rounded-lg bg-surface-900/60 border border-white/5 flex items-start justify-between gap-2"
+                      >
+                        <div>
+                          <div className="text-xs font-medium text-slate-200">{item.skill}</div>
+                          <div className="text-[11px] text-slate-400">{item.evidence}</div>
+                        </div>
+                        <span
+                          className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded whitespace-nowrap ${
+                            item.status === "Remediated"
+                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                              : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="text-[11px] text-slate-400 border-t border-white/5 pt-2 flex items-center justify-between">
+                    <span>Initial ATS Resume Match:</span>
+                    <span className="text-slate-200 font-mono font-bold">
+                      {assessmentResult.atsContext.initialMatchScore}%
+                    </span>
                   </div>
                 </div>
               )}

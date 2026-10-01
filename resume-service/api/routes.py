@@ -148,6 +148,79 @@ def get_job_rankings(job_id: int, db: Session = Depends(get_db)):
     return results
 
 
+@router.get("/evaluations/token/{token}", tags=["ATS Evaluations"])
+def get_evaluation_by_token(token: str, db: Session = Depends(get_db)):
+    """Fetches candidate evaluation by autonomous interview token with candidate and job details."""
+    ev = db.query(ATSEvaluation).filter(ATSEvaluation.interview_token == token).first()
+    if not ev:
+        raise HTTPException(status_code=404, detail="Evaluation not found for this token")
+
+    candidate = db.query(ResumeCandidate).filter(ResumeCandidate.id == ev.candidate_id).first() if ev.candidate_id else None
+    job = db.query(JobDescription).filter(JobDescription.id == ev.job_id).first() if ev.job_id else None
+
+    return {
+        "id": ev.id,
+        "job_id": ev.job_id,
+        "candidate_id": ev.candidate_id,
+        "candidate_name": candidate.candidate_name if candidate else "Candidate",
+        "candidate_email": candidate.candidate_email if candidate else "",
+        "job_title": job.title if job else "Software Engineer",
+        "job_description": job.raw_content if job else "",
+        "overall_score": ev.overall_score,
+        "rubric_scores": {
+            "hard_skills": ev.hard_skills_score,
+            "experience_relevance": ev.experience_score,
+            "education_qualification": ev.education_score,
+            "formatting_clarity": ev.formatting_score,
+        },
+        "skills_matrix": ev.skills_matrix or {},
+        "strengths": ev.strengths or [],
+        "weaknesses_or_red_flags": ev.weaknesses_or_red_flags or [],
+        "actionable_recommendations": ev.actionable_recommendations or [],
+        "hiring_recommendation": ev.hiring_recommendation,
+        "interview_token": ev.interview_token,
+        "status": ev.status,
+        "created_at": ev.created_at.isoformat() if ev.created_at else None
+    }
+
+
+@router.get("/evaluations/{evaluation_id}", tags=["ATS Evaluations"])
+def get_evaluation_by_id(evaluation_id: int, db: Session = Depends(get_db)):
+    """Fetches candidate evaluation by ID with candidate and job details."""
+    ev = db.query(ATSEvaluation).filter(ATSEvaluation.id == evaluation_id).first()
+    if not ev:
+        raise HTTPException(status_code=404, detail="Evaluation not found")
+
+    candidate = db.query(ResumeCandidate).filter(ResumeCandidate.id == ev.candidate_id).first() if ev.candidate_id else None
+    job = db.query(JobDescription).filter(JobDescription.id == ev.job_id).first() if ev.job_id else None
+
+    return {
+        "id": ev.id,
+        "job_id": ev.job_id,
+        "candidate_id": ev.candidate_id,
+        "candidate_name": candidate.candidate_name if candidate else "Candidate",
+        "candidate_email": candidate.candidate_email if candidate else "",
+        "job_title": job.title if job else "Software Engineer",
+        "job_description": job.raw_content if job else "",
+        "overall_score": ev.overall_score,
+        "rubric_scores": {
+            "hard_skills": ev.hard_skills_score,
+            "experience_relevance": ev.experience_score,
+            "education_qualification": ev.education_score,
+            "formatting_clarity": ev.formatting_score,
+        },
+        "skills_matrix": ev.skills_matrix or {},
+        "strengths": ev.strengths or [],
+        "weaknesses_or_red_flags": ev.weaknesses_or_red_flags or [],
+        "actionable_recommendations": ev.actionable_recommendations or [],
+        "hiring_recommendation": ev.hiring_recommendation,
+        "interview_token": ev.interview_token,
+        "status": ev.status,
+        "created_at": ev.created_at.isoformat() if ev.created_at else None
+    }
+
+
+
 @router.post("/resumes/parse", response_model=DocumentParseResponse, tags=["Document Ingestion"])
 async def parse_resume_document(file: UploadFile = File(...)):
     """

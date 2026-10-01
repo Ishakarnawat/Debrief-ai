@@ -25,6 +25,8 @@ import {
   Camera,
   Activity,
   Cloud,
+  Target,
+  ExternalLink,
 } from "lucide-react";
 import CompetencyRadarChart from "./CompetencyRadarChart";
 import PDFScorecardModal from "./PDFScorecardModal";
@@ -402,6 +404,21 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
             >
               <User size={14} />
               <span>Resume & Profile</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("adaptive")}
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 ${
+                activeTab === "adaptive"
+                  ? "bg-brand-500/15 text-brand-400 border border-brand-500/20"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              }`}
+            >
+              <Target size={14} />
+              <span>Adaptive ATS Remediation</span>
+              {candidate.atsContext && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              )}
             </button>
           </div>
 
@@ -784,6 +801,126 @@ export default function CandidateReviewModal({ candidate, onClose, onUpdateStatu
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* TAB 5: Adaptive ATS Remediation */}
+          {activeTab === "adaptive" && (
+            <div className="space-y-5">
+              {candidate.atsContext ? (
+                <>
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-brand-950/60 via-surface-900 to-indigo-950/40 border border-brand-500/25 flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Target size={18} className="text-brand-400" />
+                        <span className="font-display font-bold text-white text-sm">
+                          ATS Skill Gap Remediation Report
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          Verified via Live AI
+                        </span>
+                      </div>
+                      <p className="text-slate-400 text-xs mt-1">
+                        Initial ATS Match: <strong className="text-slate-200">{candidate.atsContext.initialMatchScore}%</strong> • Remediation Score:{" "}
+                        <strong className="text-emerald-400">{candidate.atsContext.skillGapRemediationScore}%</strong>
+                      </p>
+                    </div>
+
+                    <a
+                      href={`/live-interview?token=${candidate.invitationToken || "alex_mercer"}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-primary inline-flex items-center gap-1.5 text-xs py-2 px-4 shadow-sm"
+                    >
+                      <span>Re-launch Live AI Session</span>
+                      <ExternalLink size={13} />
+                    </a>
+                  </div>
+
+                  {/* Remediation Item Breakdown */}
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                      Probed Skill Gaps & Candidate Evidence
+                    </h4>
+                    <div className="grid grid-cols-1 gap-2.5">
+                      {candidate.atsContext.remediationBreakdown?.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 rounded-xl bg-surface-900 border border-white/5 flex items-start justify-between gap-3"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-white">{item.skill}</span>
+                              <span
+                                className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded ${
+                                  item.status === "Remediated"
+                                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                    : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                }`}
+                              >
+                                {item.status}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-300">{item.evidence}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Verified Strengths vs Red Flags Probed */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div className="p-3.5 rounded-xl bg-surface-900 border border-white/5 space-y-2">
+                      <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
+                        <CheckCircle2 size={14} />
+                        Verified ATS Strengths
+                      </span>
+                      <ul className="text-xs text-slate-300 space-y-1">
+                        {candidate.atsContext.strengths?.map((s, i) => (
+                          <li key={i} className="flex items-start gap-1.5">
+                            <span className="text-emerald-400">•</span>
+                            <span>{s}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-surface-900 border border-white/5 space-y-2">
+                      <span className="text-xs font-semibold text-amber-400 flex items-center gap-1.5">
+                        <AlertTriangle size={14} />
+                        Resume Flags Probed in Interview
+                      </span>
+                      <ul className="text-xs text-slate-300 space-y-1">
+                        {candidate.atsContext.redFlagsProbed?.map((f, i) => (
+                          <li key={i} className="flex items-start gap-1.5">
+                            <span className="text-amber-400">•</span>
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="p-8 rounded-xl bg-surface-900 border border-white/10 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-xl bg-brand-500/20 text-brand-400 mx-auto flex items-center justify-center">
+                    <Target size={24} />
+                  </div>
+                  <h4 className="text-sm font-semibold text-white">Adaptive Session Ready</h4>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    This candidate has not yet taken a live adaptive AI interview session with automatic ATS skill gap injection.
+                  </p>
+                  <a
+                    href={`/live-interview?token=${candidate.invitationToken || "alex_mercer"}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary inline-flex items-center gap-2 text-xs py-2 px-5 mt-2"
+                  >
+                    <span>Launch Live Adaptive AI Interview</span>
+                    <ExternalLink size={14} />
+                  </a>
+                </div>
+              )}
             </div>
           )}
 

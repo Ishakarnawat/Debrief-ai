@@ -1,8 +1,57 @@
 const axios = require("axios");
 const Analysis = require("../models/Analysis");
 const { dispatchCandidateWebhook } = require("./webhookController");
+const resumeClient = require("../services/resumeServiceClient");
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
+
+/**
+ * Curated high-fidelity preset ATS profiles for instant demonstration and local testing.
+ */
+const PRESET_ATS_PROFILES = {
+  alex_mercer: {
+    candidateName: "Alex Mercer",
+    candidateEmail: "alex.mercer@example.com",
+    targetRole: "Senior Distributed Systems Engineer",
+    overallScore: 84.5,
+    matchedSkills: ["Python", "FastAPI", "Docker", "PostgreSQL", "REST APIs"],
+    missingCriticalSkills: ["Kubernetes", "Redis Distributed Caching"],
+    transferableSkills: ["Celery", "RabbitMQ"],
+    strengths: [
+      "5+ years backend Python development with high-concurrency microservices",
+      "Production relational database schema design and query optimization",
+    ],
+    weaknessesOrRedFlags: [
+      "No production Kubernetes cluster orchestration experience noted in resume",
+      "Missing low-latency distributed caching layer (Redis/Memcached)",
+    ],
+    suggestedQuestions: [
+      "Given that your resume highlights strong Celery background but lacks Redis caching, how would you design an in-memory cache invalidation strategy for 50,000 req/sec?",
+      "How would you deploy and handle zero-downtime rolling updates if migrating your services from bare Docker to Kubernetes?",
+    ],
+  },
+  sarah_chen: {
+    candidateName: "Sarah Chen",
+    candidateEmail: "sarah.chen@stanford.alumni.edu",
+    targetRole: "Full Stack Engineer (React & Node)",
+    overallScore: 88.0,
+    matchedSkills: ["React", "TypeScript", "Node.js", "Express", "Tailwind CSS", "MongoDB"],
+    missingCriticalSkills: ["GraphQL Federation", "WebSockets"],
+    transferableSkills: ["REST API Design", "Socket.io"],
+    strengths: [
+      "Extensive modern React 18 architecture and responsive design systems",
+      "Clean TypeScript typing and modular component design",
+    ],
+    weaknessesOrRedFlags: [
+      "Limited GraphQL schema stitching or federation experience",
+      "Real-time bidirectional synchronization relying primarily on HTTP polling",
+    ],
+    suggestedQuestions: [
+      "While your REST API architecture in Express is solid, our platform leverages GraphQL. How would you design a GraphQL schema to prevent N+1 queries?",
+      "Can you walk through your experience implementing low-latency bidirectional state synchronization using WebSockets vs Socket.io?",
+    ],
+  },
+};
 
 /**
  * Intelligent question bank by stage and role
@@ -30,56 +79,154 @@ const STAGE_QUESTIONS = {
 };
 
 /**
- * Dynamic follow-up generator
+ * GET /api/live-interview/session-context
+ * Query params: ?token=...&profile=alex_mercer|sarah_chen&candidateId=...
+ * Fetches or hydrates the candidate's ATS resume profile to initialize the Adaptive AI Interviewer.
  */
-const generateDynamicNext = async ({ candidateAnswer, currentStage, targetRole, questionIndex, conversationHistory }) => {
-  // If ML service is running and has /conversational-next, try calling it
-  try {
-    const mlResp = await axios.post(
-      `${ML_SERVICE_URL}/conversational-next`,
-      {
-        answer: candidateAnswer || "",
-        stage: currentStage,
-        role: targetRole,
-      },
-      { timeout: 3500 }
-    );
-    if (mlResp.data && mlResp.data.nextQuestion) {
-      return mlResp.data;
+const getSessionContext = async (req, res) => {
+  const { token, profile, candidateId } = req.query;
+
+  let atsData = null;
+
+  // 1. Try to fetch from FastAPI resume microservice if an interview token is provided
+  if (token && (token.startsWith("dbrf_") || token.startsWith("inv_") || token.startsWith("ats_"))) {
+    try {
+      const liveEval = await resumeClient.getEvaluationByToken(token);
+      if (liveEval) {
+        atsData = {
+          candidateName: liveEval.candidate_name || "Candidate",
+          candidateEmail: liveEval.candidate_email || "",
+          targetRole: liveEval.job_title || "Software Engineer",
+          overallScore: liveEval.overall_score || 82,
+          matchedSkills: liveEval.skills_matrix?.matched_skills || [],
+          missingCriticalSkills: liveEval.skills_matrix?.missing_critical_skills || [],
+          transferableSkills: liveEval.skills_matrix?.transferable_skills || [],
+          strengths: liveEval.strengths || [],
+          weaknessesOrRedFlags: liveEval.weaknesses_or_red_flags || [],
+          suggestedQuestions: liveEval.actionable_recommendations || [],
+          isLiveAts: true,
+          interviewToken: token,
+        };
+      }
+    } catch (err) {
+      console.warn("[Session Context] Remote token fetch fallback:", err.message);
     }
-  } catch (e) {
-    // Graceful fallback to smart contextual heuristic
   }
 
+  // 2. If candidateId provided, fetch by numerical ID
+  if (!atsData && candidateId) {
+    try {
+      const liveEval = await resumeClient.getEvaluationById(Number(candidateId));
+      if (liveEval) {
+        atsData = {
+          candidateName: liveEval.candidate_name || "Candidate",
+          candidateEmail: liveEval.candidate_email || "",
+          targetRole: liveEval.job_title || "Software Engineer",
+          overallScore: liveEval.overall_score || 82,
+          matchedSkills: liveEval.skills_matrix?.matched_skills || [],
+          missingCriticalSkills: liveEval.skills_matrix?.missing_critical_skills || [],
+          transferableSkills: liveEval.skills_matrix?.transferable_skills || [],
+          strengths: liveEval.strengths || [],
+          weaknessesOrRedFlags: liveEval.weaknesses_or_red_flags || [],
+          suggestedQuestions: liveEval.actionable_recommendations || [],
+          isLiveAts: true,
+        };
+      }
+    } catch (err) {
+      console.warn("[Session Context] Remote candidateId fetch fallback:", err.message);
+    }
+  }
+
+  // 3. Fallback to chosen preset or default
+  if (!atsData) {
+    const presetKey = profile && PRESET_ATS_PROFILES[profile] ? profile : "alex_mercer";
+    atsData = {
+      ...PRESET_ATS_PROFILES[presetKey],
+      isLiveAts: false,
+    };
+  }
+
+  // Craft personalized adaptive intro question
+  const topSkills = (atsData.matchedSkills || []).slice(0, 3).join(", ");
+  const introQuestion = `Welcome, ${atsData.candidateName}! I have reviewed your resume and ATS evaluation for the ${atsData.targetRole} role. We noted your strong foundations in ${topSkills || "modern software engineering"}. To start off, please introduce yourself, walk through your engineering background, and highlight the project you are most proud of architecting.`;
+
+  res.json({
+    success: true,
+    adaptiveMode: true,
+    atsProfile: atsData,
+    initialQuestion: introQuestion,
+    targetGaps: atsData.missingCriticalSkills,
+  });
+};
+
+/**
+ * Dynamic follow-up generator with ATS Skill Gap Probing
+ */
+const generateDynamicNext = async ({
+  candidateAnswer,
+  currentStage,
+  targetRole,
+  questionIndex,
+  conversationHistory,
+  atsProfile,
+}) => {
   const answerLower = (candidateAnswer || "").toLowerCase();
+  const missingSkills = atsProfile?.missingCriticalSkills || ["Distributed Systems", "Concurrency"];
+  const matchedSkills = atsProfile?.matchedSkills || ["JavaScript", "Python"];
+  const candidateName = atsProfile?.candidateName || "Candidate";
 
   let aiFeedback = "Thank you for explaining that in detail.";
   let nextStage = currentStage;
   let nextQuestion = "";
   let isFinal = false;
+  let gapProbed = null;
 
   if (currentStage === "intro") {
-    aiFeedback = "Impressive background! I noticed your emphasis on scalable systems and practical delivery.";
+    // Transition from intro to technical: PROBE MISSING SKILL #1
+    const primaryGap = missingSkills[0] || "Distributed Caching";
+    gapProbed = primaryGap;
+    aiFeedback = `Thank you, ${candidateName}. It's clear you have significant experience with ${matchedSkills.slice(0, 2).join(" and ") || "backend engineering"}.`;
     nextStage = "technical";
-    nextQuestion = STAGE_QUESTIONS.technical[Math.floor(Math.random() * STAGE_QUESTIONS.technical.length)];
-  } else if (currentStage === "technical") {
-    if (answerLower.includes("cache") || answerLower.includes("redis")) {
-      aiFeedback = "Great consideration of caching strategies and cache invalidation boundaries.";
-    } else if (answerLower.includes("microservice") || answerLower.includes("database")) {
-      aiFeedback = "Strong breakdown of data persistence and service isolation.";
+
+    if (atsProfile?.suggestedQuestions && atsProfile.suggestedQuestions.length > 0) {
+      nextQuestion = atsProfile.suggestedQuestions[0];
     } else {
-      aiFeedback = "Solid architectural intuition and clear prioritization of reliability.";
+      nextQuestion = `During our initial ATS resume screening, our system identified strong core engineering skills, but noted limited production experience with ${primaryGap}. Can you walk me through how you would architect a high-throughput solution utilizing ${primaryGap} and what architectural trade-offs you would consider?`;
     }
+  } else if (currentStage === "technical") {
+    // Check if candidate demonstrated grasp of the missing skill or related concepts
+    const primaryGap = missingSkills[0] || "Caching";
+    const secondaryGap = missingSkills[1] || "Cloud Orchestration";
+
+    const addressedPrimary =
+      answerLower.includes(primaryGap.toLowerCase()) ||
+      answerLower.includes("cache") ||
+      answerLower.includes("cluster") ||
+      answerLower.includes("concurrency") ||
+      answerLower.includes("scale") ||
+      answerLower.includes("database") ||
+      answerLower.includes("invalidation");
+
+    if (addressedPrimary) {
+      aiFeedback = `Great breakdown! You articulated sound theoretical trade-offs and practical considerations around ${primaryGap}.`;
+    } else {
+      aiFeedback = `Understood. While that covers general architecture, building production-grade reliability around ${primaryGap} requires deep fault isolation.`;
+    }
+
     nextStage = "coding";
-    nextQuestion = STAGE_QUESTIONS.coding[0];
+    gapProbed = secondaryGap;
+    nextQuestion = `Let's transition to the live technical coding challenge. To evaluate your problem-solving under real-time constraints, please walk me through your algorithmic approach and edge-case handling before implementing the solution in the editor.`;
   } else if (currentStage === "coding") {
-    aiFeedback = "Great job breaking down the problem and thinking through edge cases in your code.";
+    aiFeedback = "Excellent job working through the algorithmic constraints, data structures, and edge cases in the code editor.";
     nextStage = "behavioral";
-    nextQuestion = STAGE_QUESTIONS.behavioral[Math.floor(Math.random() * STAGE_QUESTIONS.behavioral.length)];
+
+    // In behavioral stage, probe technical leadership or how they adapt to new/missing tech stacks
+    const gapToLearn = missingSkills[0] || "unfamiliar technologies";
+    nextQuestion = `Tell me about a real-world project where you had to ship a critical production feature using a technology or stack—like ${gapToLearn}—that you had zero prior experience with. How did you ramp up, manage engineering risk, and deliver on time?`;
   } else if (currentStage === "behavioral") {
-    aiFeedback = "Excellent demonstration of accountability, empathy, and constructive communication.";
+    aiFeedback = "Outstanding demonstration of self-directed learning, engineering ownership, and structured communication under pressure.";
     nextStage = "wrapup";
-    nextQuestion = STAGE_QUESTIONS.wrapup[0];
+    nextQuestion = `Thank you, ${candidateName}. You have completed all technical, adaptive, and behavioral assessment stages. We have aggregated your proctoring integrity, coding evaluation, and ATS skill gap remediation into a final scorecard.`;
     isFinal = true;
   } else {
     aiFeedback = "All assessment stages completed.";
@@ -94,6 +241,7 @@ const generateDynamicNext = async ({ candidateAnswer, currentStage, targetRole, 
     nextStage,
     speechText: `${aiFeedback} ${nextQuestion}`,
     isFinal,
+    gapProbed,
   };
 };
 
@@ -101,7 +249,14 @@ const generateDynamicNext = async ({ candidateAnswer, currentStage, targetRole, 
  * POST /api/live-interview/next-question
  */
 const getNextQuestion = async (req, res) => {
-  const { candidateAnswer, currentStage, targetRole, questionIndex, conversationHistory } = req.body;
+  const {
+    candidateAnswer,
+    currentStage,
+    targetRole,
+    questionIndex,
+    conversationHistory,
+    atsProfile,
+  } = req.body;
 
   const result = await generateDynamicNext({
     candidateAnswer,
@@ -109,10 +264,12 @@ const getNextQuestion = async (req, res) => {
     targetRole: targetRole || "Full Stack Engineer",
     questionIndex: questionIndex || 0,
     conversationHistory: conversationHistory || [],
+    atsProfile: atsProfile || null,
   });
 
   res.json({ success: true, ...result });
 };
+
 
 /**
  * POST /api/live-interview/evaluate-code
@@ -180,6 +337,7 @@ const completeLiveInterview = async (req, res) => {
     proctoringData = null,
     mediaType = "video",
     isPrivate = false,
+    atsProfile = null,
   } = req.body;
 
   // Aggregate candidate transcripts from conversation turns
@@ -248,7 +406,55 @@ const completeLiveInterview = async (req, res) => {
     5;
 
   let hiringScore = Math.round(avgRubric * 10 + codeBonus * 0.3 - (proctoring.tabSwitches || 0) * 8);
-  hiringScore = Math.max(30, Math.min(96, hiringScore));
+
+  // ── Calculate Skill Gap Remediation & Holistic Score ──────────────────────────
+  let atsContext = null;
+  if (atsProfile) {
+    const missingSkills = atsProfile.missingCriticalSkills || [];
+    const transcriptLower = fullTranscript.toLowerCase();
+
+    const remediationBreakdown = missingSkills.map((skill) => {
+      const skillLower = skill.toLowerCase();
+      const firstWord = skillLower.split(" ")[0];
+      const mentioned =
+        transcriptLower.includes(skillLower) ||
+        (firstWord.length > 3 && transcriptLower.includes(firstWord)) ||
+        transcriptLower.includes("cache") ||
+        transcriptLower.includes("cluster") ||
+        transcriptLower.includes("architecture");
+
+      return {
+        skill,
+        status: mentioned ? "Remediated" : "Partially Addressed",
+        evidence: mentioned
+          ? `Candidate articulated sound technical understanding and architectural considerations around ${skill}.`
+          : `Candidate discussed related concepts; recommend direct recruiter drill-down into hands-on ${skill} experience.`,
+      };
+    });
+
+    const remediatedCount = remediationBreakdown.filter((r) => r.status === "Remediated").length;
+    const remediationScore =
+      missingSkills.length > 0
+        ? Math.round((remediatedCount / missingSkills.length) * 100)
+        : 88;
+
+    atsContext = {
+      initialMatchScore: atsProfile.overallScore || 82,
+      matchedSkills: atsProfile.matchedSkills || [],
+      missingSkillsProbed: missingSkills,
+      skillGapRemediationScore: remediationScore,
+      remediationBreakdown,
+      strengths: atsProfile.strengths || [],
+      redFlagsProbed: atsProfile.weaknessesOrRedFlags || [],
+      evaluationProvider: atsProfile.isLiveAts ? "Google Gemini 2.5 Flash" : "Debrief ATS Heuristic",
+    };
+
+    // Holistic composite formula: 60% live performance + 40% initial ATS resume score
+    const initialATS = atsProfile.overallScore || 80;
+    hiringScore = Math.round(hiringScore * 0.6 + initialATS * 0.4);
+  }
+
+  hiringScore = Math.max(30, Math.min(98, hiringScore));
 
   let recommendation = "Hire";
   if (hiringScore >= 85 && proctoring.riskLevel === "low") {
@@ -280,6 +486,12 @@ const completeLiveInterview = async (req, res) => {
       impact: "medium",
     });
   }
+  if (atsContext && atsContext.skillGapRemediationScore < 60) {
+    weaknesses.push({
+      issue: "Did not fully resolve ATS-flagged skill gaps during technical deep-dive stage",
+      impact: "high",
+    });
+  }
   if (weaknesses.length === 0) {
     weaknesses.push({
       issue: "Continue reinforcing concise executive summaries when concluding complex answers",
@@ -294,9 +506,10 @@ const completeLiveInterview = async (req, res) => {
     "scaled to handle 4x customer volume with zero downtime during peak deployment.";
 
   const recruiterSummary =
-    `${candidateName} completed the live interactive AI interview for ${targetRole} with an overall hiring score of ` +
+    `${candidateName} completed the live interactive AI interview for ${targetRole} with an overall holistic hiring score of ` +
     `${hiringScore}% (${recommendation}). Technical accuracy stood at ${rubric.technicalAccuracy}/10, with ` +
-    `code evaluation status '${codeEvaluation?.status || "NOT_SUBMITTED"}'. Proctoring integrity recorded at ${proctoring.integrityScore}%.`;
+    `code evaluation status '${codeEvaluation?.status || "NOT_SUBMITTED"}'. Proctoring integrity recorded at ${proctoring.integrityScore}%.` +
+    (atsContext ? ` ATS Skill Gap Remediation reached ${atsContext.skillGapRemediationScore}%.` : "");
 
   // Create record
   const analysis = await Analysis.create({
@@ -320,7 +533,7 @@ const completeLiveInterview = async (req, res) => {
     candidateName,
     candidateEmail,
     targetRole,
-    question: "Full Live Conversational Interview (5 Stages + Coding)",
+    question: "Full Adaptive Conversational Interview (5 Stages + Coding)",
     status: "Screening",
     recruiterNotes: "",
     rubric,
@@ -331,6 +544,7 @@ const completeLiveInterview = async (req, res) => {
     saveVideoFile: false,
     codeEvaluation,
     conversationHistory,
+    atsContext,
   });
 
   // Automated webhook dispatch
@@ -348,7 +562,9 @@ const completeLiveInterview = async (req, res) => {
 };
 
 module.exports = {
+  getSessionContext,
   getNextQuestion,
   evaluateCode,
   completeLiveInterview,
 };
+

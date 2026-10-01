@@ -104,6 +104,19 @@ To make it look like a premium, modern SaaS product:
 - **Autonomous Pipeline Funnel:** Automatically qualifies top-scoring applicants (score $\ge$ 75%) and issues unique tokens directly into Debrief's proctored AI video interview pipeline.
 - **Recruiter Resume Hub:** Modern React UI with interactive SVG match gauges, green/red skill pills, and one-click interview advancement.
 
+### Phase 7: Strict Role-Based Access Control (RBAC) & Dedicated Portals ✅ [IMPLEMENTED]
+- **Separated Portals:** Independent entry points and onboarding flows for Candidates (`/auth/candidate`) and Recruiters (`/auth/recruiter`).
+- **RBAC Route Guarding:** Secure middleware protecting recruiter-only ATS administration and candidate practice spaces with custom claims.
+- **Side-by-Side Reviewer Modal:** Integrated JD vs. candidate parsed resume viewer (`CandidateReviewModal.jsx`) with inline status controls.
+- **Candidate Executive Playbook:** Dynamic weakness breakdown (`WeaknessList.jsx`) with drill-down exercises and model STAR behavioral answers.
+
+### Phase 8: Adaptive AI Interviewer (Dynamic ATS Context & Skill Gap Probing) ✅ [IMPLEMENTED]
+- **Automated ATS Context Bridge:** Seamlessly extracts candidate's verified skills, missing critical skills, and resume red flags from `resume-service` and injects them directly into the live AI interview room.
+- **Adaptive Dynamic Questioning:** The conversational AI interviewer dynamically customizes technical deep-dive and behavioral questions to probe the candidate's exact skill gaps (e.g. distributed caching, Kubernetes cluster failover).
+- **Real-Time Telemetry HUD:** Active telemetry banner with animated radar pulse indicators displaying target skill gaps under scrutiny during live video and coding stages.
+- **Skill Gap Remediation Engine:** Algorithmic evaluation of candidate responses during the interview, determining remediation status (`Remediated`, `Partially Addressed`) and generating an auditable verification breakdown.
+- **Holistic Candidate Rating:** Composite scoring model combining Initial ATS Resume Score (40%) + Live Interview & Proctoring Integrity Score (60%) for balanced, data-driven hiring decisions.
+
 ---
 
 ## 🏗️ Updated System Architecture

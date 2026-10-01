@@ -186,7 +186,7 @@ flowchart TD
 [ Phase 4: Live Interview & Coding ] ──► [ Phase 5: Recruiter Hub & ATS Matrix ] ──► [ Phase 6: Gemini ATS Microservice ]
           │
           ▼
-[ Phase 7: Strict RBAC & Academic Viva Defense ]
+[ Phase 7: Strict RBAC & Portals ] ──► [ Phase 8: Adaptive AI Interviewer & Gap Remediation ]
 ```
 
 ### 🟢 Phase 1: Video Capture & Storage Engine `COMPLETED`
@@ -246,6 +246,14 @@ flowchart TD
 - [x] Candidate AI Executive Coaching Playbook with tailored weakness drills (`WeaknessList.jsx`) and model STAR answers.
 - [x] Academic evaluation & benchmarking suite (`benchmarks/benchmark.py`) for processing latency, precision, and recall.
 - [x] Complete Viva Defense Guide (`VIVA_DEFENSE_GUIDE.md`) with architectural justifications and examiner Q&A prep.
+
+### 🎯 Phase 8: Adaptive AI Interviewer & ATS Skill Gap Remediation `COMPLETED`
+- [x] Dynamic context injection pipeline extracting candidate ATS scores, matched skills, missing critical gaps, and red flags into the live AI interview.
+- [x] Adaptive question generation engine customizing technical deep-dives to directly interrogate candidates on their missing skills (e.g. distributed caching, cluster orchestration).
+- [x] Live interview telemetry HUD banner displaying target gaps under scrutiny with interactive candidate preset selector.
+- [x] Algorithmic Skill Gap Remediation evaluator assessing candidate verbal defense, verifying mastery, and assigning remediation status (`Remediated`, `Partially Addressed`).
+- [x] Holistic candidate rating model synthesizing Initial ATS Resume Score (40%) + Live Performance & Proctoring Score (60%).
+- [x] Recruiter Review Modal integration with dedicated Adaptive ATS Remediation audit tab (`CandidateReviewModal.jsx`).
 
 ---
 

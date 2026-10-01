@@ -448,10 +448,10 @@ export default function ResumeScreenerPage() {
     }
   };
 
-  // Promotion Handler (Advances candidate to live video interview)
+  // Promotion Handler (Advances candidate to live adaptive AI video interview)
   const handlePromoteCandidate = (candidate) => {
     const token = candidate?.interview_token || "dbrf_auto_qualified";
-    navigate(`/interview/${token}`);
+    navigate(`/live-interview?token=${encodeURIComponent(token)}`);
   };
 
   // Radial Gauge Calculations

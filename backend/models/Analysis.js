@@ -122,6 +122,22 @@ const AnalysisSchema = new mongoose.Schema(
         stage: String,
       },
     ],
+    atsContext: {
+      initialMatchScore: Number,
+      matchedSkills: [String],
+      missingSkillsProbed: [String],
+      skillGapRemediationScore: Number,
+      remediationBreakdown: [
+        {
+          skill: String,
+          status: String,
+          evidence: String,
+        },
+      ],
+      strengths: [String],
+      redFlagsProbed: [String],
+      evaluationProvider: String,
+    },
     webhookDispatched: { type: Boolean, default: false },
   },
   { timestamps: true }

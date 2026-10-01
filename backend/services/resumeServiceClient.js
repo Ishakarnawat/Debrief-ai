@@ -170,6 +170,24 @@ async function runBenchmarks() {
   return response.data;
 }
 
+/**
+ * Retrieve candidate evaluation by autonomous interview token.
+ * @param {string} token
+ */
+async function getEvaluationByToken(token) {
+  const response = await resumeServiceAxios.get(`/evaluations/token/${encodeURIComponent(token)}`);
+  return response.data;
+}
+
+/**
+ * Retrieve candidate evaluation by ID.
+ * @param {number} evaluationId
+ */
+async function getEvaluationById(evaluationId) {
+  const response = await resumeServiceAxios.get(`/evaluations/${evaluationId}`);
+  return response.data;
+}
+
 module.exports = {
   createJob,
   listJobs,
@@ -182,5 +200,8 @@ module.exports = {
   healthCheck,
   getLatestBenchmarks,
   runBenchmarks,
+  getEvaluationByToken,
+  getEvaluationById,
 };
+
 
